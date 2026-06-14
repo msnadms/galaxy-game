@@ -1,0 +1,39 @@
+.app {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.system-panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(6, 12, 28, 0.88);
+  border: 1px solid #1a3a5c;
+  border-radius: 4px;
+  padding: 14px 18px;
+  min-width: 220px;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+}
+
+.system-panel-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e8f0f8;
+  margin-bottom: 6px;
+  letter-spacing: 0.03em;
+}
+
+.system-panel-type {
+  font-size: 12px;
+  color: #6a90b0;
+  margin-bottom: 4px;
+}
+
+.system-panel-coords {
+  font-size: 11px;
+  color: #3a5a72;
+  font-family: monospace;
+}

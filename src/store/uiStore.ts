@@ -1,0 +1,15 @@
+import { create } from 'zustand';
+
+interface UIState {
+  selectedSystemId: number | null;
+  selectSystem: (id: number | null) => void;
+  showHyperlanes: boolean;
+  toggleHyperlanes: () => void;
+}
+
+export const useUIStore = create<UIState>((set) => ({
+  selectedSystemId: null,
+  selectSystem: (id) => set({ selectedSystemId: id }),
+  showHyperlanes: true,
+  toggleHyperlanes: () => set((s) => ({ showHyperlanes: !s.showHyperlanes })),
+}));

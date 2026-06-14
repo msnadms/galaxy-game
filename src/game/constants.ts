@@ -1,0 +1,113 @@
+// ─── Galaxy shape ────────────────────────────────────────────────────────────
+
+// Outer radius of the galaxy in world-space pixels.
+// Increasing this makes the galaxy larger and stars more spread out.
+export const GALAXY_RADIUS = 720;
+
+// Number of spiral arms. Changing this affects both star placement and nebula.
+export const N_ARMS = 3;
+
+// Y-axis squish applied to arm stars and nebula clouds to tilt the galaxy into
+// a slight ellipse (as if viewed at an angle). 1.0 = circle, 0.5 = flat oval.
+export const GALAXY_ELLIPSE = 0.7;
+
+// How many radians the spiral rotates from centre to edge.
+// Higher = tighter/more wound spiral. Used in both star gen and nebula placement.
+export const SPIRAL_TWIST = 2.3;
+
+// ─── Star generation ─────────────────────────────────────────────────────────
+
+// Probability (0–1) that any given star ends up in the central bulge rather
+// than on a spiral arm. 0.18 = 18% bulge stars.
+export const BULGE_FRACTION = 0.3;
+
+// Bulge stars are placed within this fraction of GALAXY_RADIUS from the center.
+export const BULGE_RADIUS_FRACTION = 0.22;
+
+// Y-axis squish applied specifically to the bulge cluster (slightly rounder
+// than the arms, but still slightly elliptical).
+export const BULGE_ELLIPSE = 0.7;
+
+// Power curve applied to the random t value for arm star placement.
+// Values < 1 push stars toward the outer regions; 1.0 = uniform distribution.
+export const ARM_T_POWER = 0.65;
+
+// Arm stars start at this fraction of GALAXY_RADIUS from the centre (not at 0
+// so there's a gap between the bulge and the arm starts).
+export const ARM_INNER_FRACTION = 0.08;
+
+// Controls how wide (perpendicular to the arm centreline) stars can scatter.
+// Higher = fatter, blurrier arms; lower = tighter, more distinct arms.
+export const ARM_SPREAD = 0.07;
+
+// Minimum spread multiplier at the arm's inner end (spread grows with t).
+export const ARM_SPREAD_BASE = 0.3;
+
+// Multiplier for the size of each star.
+export const STAR_SIZE_MULTIPLIER = 0.5;
+
+export const NUM_STARS = 320;
+
+// ─── Hyperlanes ──────────────────────────────────────────────────────────────
+
+// Maximum world-space pixel distance between two stars that can be connected
+// by a hyperlane. Longer distances = more connections but messier looking.
+export const MAX_LANE_DIST = 260;
+
+// ─── Background starfield ────────────────────────────────────────────────────
+
+// Total number of decorative background stars generated.
+export const BACKGROUND_STAR_COUNT = 4800;
+
+// Width and height of the area background stars are scattered across.
+// Should be larger than the visible screen so stars fill the view while panning.
+export const BACKGROUND_STAR_AREA_X = 5000;
+export const BACKGROUND_STAR_AREA_Y = 4000;
+
+// ─── Nebula ──────────────────────────────────────────────────────────────────
+
+// Colours blended across all nebula arm particles (purple, rose-red, indigo-blue).
+export const NEBULA_COLORS = [0x8822cc, 0xcc3366, 0x4422bb];
+
+// How many blob positions are sampled along each arm (before random skipping).
+export const NEBULA_STEPS = 16;
+
+// Probability (0–1) that any given step position is skipped, creating gaps.
+export const NEBULA_SKIP_CHANCE = 0;
+
+// Number of particles drawn per blob position.
+export const NEBULA_PARTICLES_PER_STEP = 500;
+
+// Controls how wide each blob cloud is relative to GALAXY_RADIUS.
+export const NEBULA_SPREAD = 0.18;
+
+// Controls how large each blob is.
+export const NEBULA_RADIUS_MULTIPLIER = 0.25;
+
+// Controls where nebula blobs start.
+export const NEBULA_CLOUD_OFFSET = 150;
+
+// ─── Galactic core glow ──────────────────────────────────────────────────────
+
+// Number of particles in the central white-gold core glow.
+export const CORE_PARTICLE_COUNT = 300;
+
+// Half-width and half-height of the ellipse the core particles scatter within.
+export const CORE_ELLIPSE_X = 180;
+export const CORE_ELLIPSE_Y = 110;
+
+// ─── Camera ──────────────────────────────────────────────────────────────────
+
+// Starting zoom level. 1.0 = 1:1 pixels, < 1 = zoomed out.
+export const CAMERA_INITIAL_SCALE = 0.65;
+
+// Minimum and maximum allowed zoom levels.
+export const CAMERA_MIN_SCALE = 0.12;
+export const CAMERA_MAX_SCALE = 6;
+
+// Zoom multiplier applied per scroll step (12% per tick).
+export const CAMERA_ZOOM_FACTOR = 1.12;
+
+// Pointer must move more than this many pixels before a press is treated as a
+// drag rather than a click.
+export const DRAG_THRESHOLD_PX = 4;

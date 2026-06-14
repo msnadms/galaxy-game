@@ -1,0 +1,111 @@
+.config-panel {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+  font-size: 12px;
+  user-select: none;
+}
+
+.config-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(6, 12, 28, 0.88);
+  border: 1px solid rgba(40, 80, 120, 0.5);
+  border-radius: 4px;
+  color: #6a90b0;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(4px);
+}
+
+.config-header:hover {
+  color: #99bbdd;
+  border-color: rgba(60, 110, 160, 0.7);
+}
+
+.config-icon {
+  font-size: 13px;
+}
+
+.config-label {
+  flex: 1;
+  text-align: left;
+}
+
+.config-chevron {
+  font-size: 8px;
+  opacity: 0.6;
+}
+
+.config-body {
+  margin-top: 2px;
+  padding: 8px 10px;
+  background: rgba(6, 12, 28, 0.88);
+  border: 1px solid rgba(40, 80, 120, 0.5);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  backdrop-filter: blur(4px);
+}
+
+.config-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+}
+
+.config-row-label {
+  color: #8aa4bc;
+  letter-spacing: 0.03em;
+}
+
+/* Visually hidden but keyboard-focusable checkbox backing the custom toggle */
+.config-toggle-checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+}
+
+.config-toggle-checkbox:focus-visible + .config-toggle {
+  outline: 2px solid #4488cc;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Toggle switch */
+.config-toggle {
+  width: 30px;
+  height: 16px;
+  border-radius: 8px;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.config-toggle.on  { background: #3366aa; }
+.config-toggle.off { background: rgba(255,255,255,0.12); }
+
+.config-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: left 0.2s;
+}
+
+.config-toggle.on  .config-toggle-thumb { left: 16px; }
+.config-toggle.off .config-toggle-thumb { left: 2px; }
