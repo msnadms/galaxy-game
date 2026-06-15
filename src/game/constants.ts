@@ -10,14 +10,14 @@ export const SPIRAL_TWISTS: Record<number, number> = {
     2: 3,
     3: 2.3,
     4: 1.5,
-    5: 1
+    5: 1.2
 }
 
 // ─── Star generation ─────────────────────────────────────────────────────────
 
 // Probability (0–1) that any given star ends up in the central bulge rather
 // than on a spiral arm. 0.18 = 18% bulge stars.
-export const BULGE_FRACTION = 0.3;
+export const BULGE_FRACTION = 0.18;
 
 // Bulge stars are placed within this fraction of GALAXY_RADIUS from the center.
 export const BULGE_RADIUS_FRACTION = 0.22;
@@ -44,11 +44,23 @@ export const ARM_SPREAD_BASE = 0.3;
 // Multiplier for the size of each star.
 export const STAR_SIZE_MULTIPLIER = 0.5;
 
+// Fraction of non-bulge stars placed as inter-arm disk stars (old, dim background population).
+export const DISK_FRACTION = 0.4;
+
+// How much angular scatter inter-arm disk stars get within their gap (fraction of half-gap width).
+export const DISK_GAP_SCATTER = 0.7;
+
+// Size multiplier applied to inter-arm disk stars to make them visibly dimmer.
+export const DISK_SIZE_SCALE = 0.6;
+
+
 // ─── Hyperlanes ──────────────────────────────────────────────────────────────
 
-// Maximum world-space pixel distance between two stars that can be connected
-// by a hyperlane. Longer distances = more connections but messier looking.
-export const MAX_LANE_DIST = 260;
+// Maximum distance for hyperlanes between stars on the same spiral arm.
+export const MAX_LANE_DIST_ARM = 500;
+
+// Maximum distance for hyperlanes involving disk or bulge stars (cross-arm / radial links).
+export const MAX_LANE_DIST = 100;
 
 // ─── Background starfield ────────────────────────────────────────────────────
 
@@ -62,7 +74,16 @@ export const BACKGROUND_STAR_AREA_Y = 4000;
 
 // ─── Nebula ──────────────────────────────────────────────────────────────────
 
-// Colours blended across all nebula arm particles.
+// Colours used in inner arm nebula (matching hot blue/white A and F stars).
+export const INNER_NEBULA_COLORS = [
+  [0x3366ff, 0x6644cc, 0x4488ee], // sapphire blue / violet
+  [0x2255ff, 0x4433bb, 0x7766ff], // deep indigo
+  [0x22aaff, 0x3355dd, 0x44bbee], // azure / cyan-blue
+  [0x8844ff, 0x5522cc, 0xaa66ff], // violet
+  [0x4466ff, 0x88aaff, 0x2244cc], // electric blue
+];
+
+// Colours blended across outer arm nebula particles.
 export const NEBULA_COLORS = [
     [0x8822cc, 0xcc3366, 0x4422bb], // Purplish red
     [0x8822cc, 0x3366cc, 0x4422bb], // Purplish blue
@@ -92,7 +113,7 @@ export const NEBULA_SPREAD = 0.19;
 export const NEBULA_RADIUS_MULTIPLIER = 0.25;
 
 // How many pixels the displacement filter shifts nebula pixels at peak.
-export const NEBULA_DISPLACEMENT_SCALE = 20;
+export const NEBULA_DISPLACEMENT_SCALE = 22;
 
 // Controls where nebula blobs start.
 export const NEBULA_CLOUD_OFFSET = 120;

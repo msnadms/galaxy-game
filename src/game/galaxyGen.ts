@@ -10,10 +10,14 @@ import {
   ARM_SPREAD,
   ARM_SPREAD_BASE,
   MAX_LANE_DIST,
+  MAX_LANE_DIST_ARM,
   BACKGROUND_STAR_COUNT,
   BACKGROUND_STAR_AREA_X,
   BACKGROUND_STAR_AREA_Y,
-  STAR_SIZE_MULTIPLIER
+  STAR_SIZE_MULTIPLIER,
+  DISK_FRACTION,
+  DISK_SIZE_SCALE,
+  DISK_GAP_SCATTER,
 } from './constants';
 import { GalaxyConfig } from './galaxyConfig';
 
@@ -43,18 +47,29 @@ const STAR_SIZES: Record<StarType, [number, number]> = {
   A: [3.2, 4.8],
 };
 
-const STAR_TYPE_DIST: [StarType, number][] = [
-  ['M', 0.45],
-  ['K', 0.25],
-  ['G', 0.15],
-  ['F', 0.10],
-  ['A', 0.05],
-];
-
-function pickStarType(rng: Rng): StarType {
-  const roll = rng();
+// Three populations: bulge (old, K/M heavy), disk (inter-arm, old/dim), arm (young, A/F heavy).
+// Arm weights: inner end is dominated by hot blue-white stars, outer end shifts cooler but stays
+// mostly A/F throughout since arms are where active star formation happens.
+function pickStarType(rng: Rng, armFraction: number | null, isDisk: boolean): StarType {
+  let weights: Record<StarType, number>;
+  if (isDisk) {
+    weights = { M: 0.48, K: 0.28, G: 0.18, F: 0.05, A: 0.01 };
+  } else if (armFraction === null) {
+    weights = { M: 0.50, K: 0.35, G: 0.12, F: 0.03, A: 0.00 };
+  } else {
+    const t = armFraction;
+    weights = {
+      A: lerp(0.45, 0.20, t),
+      F: lerp(0.30, 0.25, t),
+      G: lerp(0.12, 0.22, t),
+      K: lerp(0.08, 0.20, t),
+      M: lerp(0.05, 0.13, t),
+    };
+  }
+  const total = (Object.values(weights) as number[]).reduce((a, b) => a + b, 0);
+  const roll = rng() * total;
   let cumulative = 0;
-  for (const [type, weight] of STAR_TYPE_DIST) {
+  for (const [type, weight] of Object.entries(weights) as [StarType, number][]) {
     cumulative += weight;
     if (roll < cumulative) return type;
   }
@@ -75,55 +90,14 @@ function lerp(start: number, end: number, t: number) {
   return start + (end - start) * t;
 }
 
-function canConnect(armA: number | null, armB: number | null): boolean {
-  if (armA === null || armB === null) return true;
-  return armA === armB;
-}
 
-// Union-find post-pass: adds the minimum set of cross-arm edges needed to
-// guarantee the hyperlane graph is fully connected.
-function bridgeComponents(
-  hyperlanes: Hyperlane[],
-  positions: [number, number][],
-  config: GalaxyConfig
-): Hyperlane[] {
-  const parent = Array.from({ length: config.numStars }, (_, i) => i);
-
-  function find(x: number): number {
-    while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; }
-    return x;
-  }
-  function union(a: number, b: number): void {
-    const rootA = find(a), rootB = find(b);
-    if (rootA !== rootB) parent[rootA] = rootB;
-  }
-
-  for (const { from, to } of hyperlanes) union(from, to);
-
-  const bridges: Hyperlane[] = [];
-  for (let i = 0; i < config.numStars; i++) {
-    if (find(i) === find(0)) continue;
-    let nearestDist = Infinity, nearestNode = -1;
-    for (let j = 0; j < config.numStars; j++) {
-      if (find(j) !== find(0)) continue;
-      const deltaX = positions[i][0] - positions[j][0];
-      const deltaY = positions[i][1] - positions[j][1];
-      const distance = Math.hypot(deltaX, deltaY);
-      if (distance < nearestDist) { nearestDist = distance; nearestNode = j; }
-    }
-    if (nearestNode !== -1) {
-      bridges.push({ from: i, to: nearestNode });
-      union(i, nearestNode);
-    }
-  }
-
-  return bridges;
-}
 
 export function generateGalaxy(seed = Date.now()): Galaxy {
   const rng = mulberry32(seed);
   const positions: [number, number][] = [];
   const armIndices: (number | null)[] = [];
+  const armFractions: (number | null)[] = [];
+  const isDiskStar: boolean[] = [];
   const config = new GalaxyConfig(rng);
 
   for (let i = 0; i < config.numStars; i++) {
@@ -135,26 +109,44 @@ export function generateGalaxy(seed = Date.now()): Galaxy {
       x = Math.cos(angle) * radius;
       y = Math.sin(angle) * radius * BULGE_ELLIPSE;
       armIndices.push(null);
+      armFractions.push(null);
+      isDiskStar.push(false);
+    } else if (rng() < DISK_FRACTION) {
+      const t = Math.pow(rng(), ARM_T_POWER);
+      const radius = lerp(GALAXY_RADIUS * ARM_INNER_FRACTION, GALAXY_RADIUS, t);
+      const gap = Math.floor(rng() * config.numArms);
+      const gapCenterAngle = config.baseAngleOffset + ((gap + 0.5) / config.numArms) * Math.PI * 2 + t * Math.PI * config.spiralTwist;
+      const angularScatter = (DISK_GAP_SCATTER * Math.PI / config.numArms) * (rng() - 0.5) * 2;
+      const angle = gapCenterAngle + angularScatter;
+      x = Math.cos(angle) * radius;
+      y = Math.sin(angle) * radius * config.galaxyEllipse;
+      armIndices.push(null);
+      armFractions.push(null);
+      isDiskStar.push(true);
     } else {
-      const arm         = Math.floor(rng() * config.numArms);
+      const arm = Math.floor(rng() * config.numArms);
       const armFraction = Math.pow(rng(), ARM_T_POWER);
-      const radius      = lerp(GALAXY_RADIUS * ARM_INNER_FRACTION, GALAXY_RADIUS, armFraction);
-      const baseAngle   = (arm / config.numArms) * Math.PI * 2 + config.baseAngleOffset;
+      const radius = lerp(GALAXY_RADIUS * ARM_INNER_FRACTION, GALAXY_RADIUS, armFraction);
+      const baseAngle = (arm / config.numArms) * Math.PI * 2 + config.baseAngleOffset;
       const spiralAngle = baseAngle + armFraction * Math.PI * config.spiralTwist;
-      const spread      = GALAXY_RADIUS * ARM_SPREAD * (ARM_SPREAD_BASE + armFraction);
+      const spread = GALAXY_RADIUS * ARM_SPREAD * (ARM_SPREAD_BASE + armFraction);
 
       x = Math.cos(spiralAngle) * radius + (rng() - 0.5) * 2 * spread;
       y = Math.sin(spiralAngle) * radius * config.galaxyEllipse + (rng() - 0.5) * 2 * spread;
 
       armIndices.push(arm);
+      armFractions.push(armFraction);
+      isDiskStar.push(false);
     }
 
     positions.push([x, y]);
   }
 
   const systems: StarSystem[] = positions.map(([x, y], id) => {
-    const starType = pickStarType(rng);
+    const disk = isDiskStar[id];
+    const starType = pickStarType(rng, armFractions[id], disk);
     const [minSize, maxSize] = STAR_SIZES[starType];
+    const sizeScale = disk ? DISK_SIZE_SCALE : 1;
     return {
       id,
       x,
@@ -162,7 +154,7 @@ export function generateGalaxy(seed = Date.now()): Galaxy {
       name: makeName(rng),
       starType,
       color: STAR_COLORS[starType],
-      size: lerp(minSize * STAR_SIZE_MULTIPLIER, maxSize * STAR_SIZE_MULTIPLIER, rng()),
+      size: lerp(minSize * STAR_SIZE_MULTIPLIER, maxSize * STAR_SIZE_MULTIPLIER, rng()) * sizeScale,
       arm: armIndices[id],
     };
   });
@@ -179,18 +171,15 @@ export function generateGalaxy(seed = Date.now()): Galaxy {
       if (visitedEdges.has(edgeKey)) continue;
       visitedEdges.add(edgeKey);
 
-      if (!canConnect(armIndices[nodeA], armIndices[nodeB])) continue;
       const deltaX = positions[nodeA][0] - positions[nodeB][0];
       const deltaY = positions[nodeA][1] - positions[nodeB][1];
+      const sameArm = armIndices[nodeA] !== null && armIndices[nodeA] === armIndices[nodeB];
 
-      if (Math.hypot(deltaX, deltaY) < MAX_LANE_DIST) {
+      if (Math.hypot(deltaX, deltaY) < (sameArm ? MAX_LANE_DIST_ARM : MAX_LANE_DIST)) {
         hyperlanes.push({ from: nodeA, to: nodeB });
       }
     }
   }
-
-  const bridges = bridgeComponents(hyperlanes, positions, config);
-  hyperlanes.push(...bridges);
 
   const backgroundStars: BackgroundStar[] = Array.from({ length: BACKGROUND_STAR_COUNT }, () => ({
     x: (rng() - 0.5) * BACKGROUND_STAR_AREA_X,

@@ -184,8 +184,9 @@ function GalaxyWorld() {
           const offsetX = ((Math.random() + Math.random()) / 2 - 0.5) * 2 * spread;
           const offsetY = ((Math.random() + Math.random()) / 2 - 0.5) * 2 * spread * config.galaxyEllipse;
           const particleRadius = spread * (0.15 + Math.random() * 0.45) * blobScale;
-          const colorList = Math.random() < stepFraction + 0.05 
-            ? config.nebulaColors
+          const useNebula = Math.random() < stepFraction + 0.4;
+          const colorList = useNebula
+            ? (Math.random() > Math.pow(stepFraction, 2) + 0.15 ? config.innerNebulaColors : config.nebulaColors)
             : CORE_COLORS;
           const nebulaColor = colorList[Math.floor(Math.random() * colorList.length)];
 
