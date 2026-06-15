@@ -9,7 +9,8 @@ export const GALAXY_RADIUS = 720;
 export const SPIRAL_TWISTS: Record<number, number> = {
     2: 3,
     3: 2.3,
-    4: 1.5
+    4: 1.5,
+    5: 1
 }
 
 // ─── Star generation ─────────────────────────────────────────────────────────
@@ -90,6 +91,9 @@ export const NEBULA_SPREAD = 0.19;
 // Controls how large each blob is.
 export const NEBULA_RADIUS_MULTIPLIER = 0.25;
 
+// How many pixels the displacement filter shifts nebula pixels at peak.
+export const NEBULA_DISPLACEMENT_SCALE = 20;
+
 // Controls where nebula blobs start.
 export const NEBULA_CLOUD_OFFSET = 120;
 
@@ -98,7 +102,7 @@ export const NEBULA_CLOUD_OFFSET = 120;
 // Number of particles in the central white-gold core glow.
 export const CORE_PARTICLE_COUNT = 500;
 
-export const CORE_COLORS = [0xfff8e8, 0xffe8c0]
+export const CORE_COLORS = [0xffffff, 0xffe8c0]
 
 // Half-width and half-height of the ellipse the core particles scatter within.
 export const CORE_ELLIPSE_X = 180;

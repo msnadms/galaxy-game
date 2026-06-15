@@ -1,11 +1,22 @@
 import { useState } from 'react';
 import { useUIStore } from '../store/uiStore';
+import { useGameStore } from '../store/gameStore';
 import './ConfigPanel.css';
 
 export function ConfigPanel() {
   const [expanded, setExpanded] = useState(false);
   const showHyperlanes = useUIStore((s) => s.showHyperlanes);
   const toggleHyperlanes = useUIStore((s) => s.toggleHyperlanes);
+  const seed = useGameStore((s) => s.galaxy.seed);
+  const regenerate = useGameStore((s) => s.regenerate);
+  const [seedInput, setSeedInput] = useState('');
+
+  function handleSeedSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const parsed = parseInt(seedInput, 10);
+    regenerate(isNaN(parsed) ? undefined : parsed);
+    setSeedInput('');
+  }
 
   return (
     <div className="config-panel">
@@ -33,6 +44,20 @@ export function ConfigPanel() {
               <div className="config-toggle-thumb" />
             </div>
           </label>
+
+          <div className="config-row config-row--seed">
+            <span className="config-row-label">Seed</span>
+            <form className="config-seed-form" onSubmit={handleSeedSubmit}>
+              <input
+                type="text"
+                className="config-seed-input"
+                placeholder={String(seed)}
+                value={seedInput}
+                onChange={(e) => setSeedInput(e.target.value)}
+              />
+              <button type="submit" className="config-seed-btn">↺</button>
+            </form>
+          </div>
         </div>
       )}
     </div>

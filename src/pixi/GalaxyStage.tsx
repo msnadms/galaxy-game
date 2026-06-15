@@ -1,5 +1,5 @@
 import { Application, extend, useApplication } from '@pixi/react';
-import { Container, Graphics, FederatedPointerEvent, Ticker, Sprite, Texture, BlurFilter } from 'pixi.js';
+import { Container, Graphics, FederatedPointerEvent, Ticker, Sprite, Texture, BlurFilter, DisplacementFilter } from 'pixi.js';
 import { useCallback, useEffect, useRef, memo, useMemo } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useUIStore } from '../store/uiStore';
@@ -20,10 +20,35 @@ import {
   DRAG_THRESHOLD_PX,
   NEBULA_RADIUS_MULTIPLIER,
   NEBULA_CLOUD_OFFSET,
+  NEBULA_DISPLACEMENT_SCALE,
   CORE_COLORS,
 } from '../game/constants';
 
 extend({ Container, Graphics, Sprite });
+
+function createDisplacementTexture(size = 512, lowRes = 64): Texture {
+  const tmp = document.createElement('canvas');
+  tmp.width = lowRes;
+  tmp.height = lowRes;
+  const tCtx = tmp.getContext('2d')!;
+  const img = tCtx.createImageData(lowRes, lowRes);
+  for (let i = 0; i < img.data.length; i += 4) {
+    img.data[i]     = Math.random() * 255;
+    img.data[i + 1] = Math.random() * 255;
+    img.data[i + 2] = 0;
+    img.data[i + 3] = 255;
+  }
+  tCtx.putImageData(img, 0, 0);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(tmp, 0, 0, size, size);
+  return Texture.from(canvas);
+}
 
 export function GalaxyStage() {
   return (
@@ -181,13 +206,24 @@ function GalaxyWorld() {
       coreGfx.fill({ color: coreColor, alpha: 0.012 + Math.random() * 0.018 });
     }
 
-    nebulaGfx.blendMode = 'add';
-    coreGfx.blendMode = 'add';
+    nebulaGfx.blendMode = 'screen';
+    coreGfx.blendMode = 'screen';
     nebulaGfx.filters = [new BlurFilter({ strength: 0.75 })];
-    coreGfx.filters = [new BlurFilter({ strength: 0.75, blendMode: 'darken'})];
+    coreGfx.filters = [new BlurFilter({ strength: 0.75, blendMode: 'add'})];
+
+    const dispTexture = createDisplacementTexture();
+    const dispSprite = new Sprite(dispTexture);
+    dispSprite.anchor.set(0.5);
+    dispSprite.width = GALAXY_RADIUS * 3;
+    dispSprite.height = GALAXY_RADIUS * 3;
+    dispSprite.renderable = false;
+
+    const dispFilter = new DisplacementFilter({ sprite: dispSprite, scale: NEBULA_DISPLACEMENT_SCALE });
+    nebulaContainer.filters = [dispFilter];
 
     nebulaContainer.addChild(coreGfx);
     nebulaContainer.addChild(nebulaGfx);
+    nebulaContainer.addChild(dispSprite);
 
     const dimGfx = new Graphics();
     for (const star of galaxy.backgroundStars) {
@@ -215,9 +251,14 @@ function GalaxyWorld() {
     const tick = (ticker: Ticker) => {
       elapsedSecs += ticker.deltaMS / 1000;
 
-      // Nebula slowly "breathes" — alpha oscillates between 0.5 and 1.0 over ~25 seconds.
-      // Math.sin returns -1 to 1, so 0.75 + sin * 0.25 gives 0.5 to 1.0.
-      nebulaContainer.alpha = 1 + Math.sin(elapsedSecs * 0.6) * 0.25
+      nebulaContainer.alpha = 1 + Math.sin(elapsedSecs * 0.6) * 0.25;
+      dispSprite.x = Math.sin(elapsedSecs * 0.04 * 1.5) * 120;
+      dispSprite.y = Math.cos(elapsedSecs * 0.03 * 1.5) * 120;
+      dispSprite.rotation = elapsedSecs * 0.008;
+
+      const displacement = NEBULA_DISPLACEMENT_SCALE * camera.current.scale;
+      dispFilter.scale.x = displacement;
+      dispFilter.scale.y = displacement;
 
       // Dim stars pulse between alpha 0.25 and 0.80 at 1.5 Hz (1.5 cycles per second).
       // Math.abs(Math.sin()) keeps alpha positive — it bounces 0→1→0→1 instead of going negative.
