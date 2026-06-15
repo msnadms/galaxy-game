@@ -4,16 +4,13 @@
 // Increasing this makes the galaxy larger and stars more spread out.
 export const GALAXY_RADIUS = 720;
 
-// Number of spiral arms. Changing this affects both star placement and nebula.
-export const N_ARMS = 3;
-
-// Y-axis squish applied to arm stars and nebula clouds to tilt the galaxy into
-// a slight ellipse (as if viewed at an angle). 1.0 = circle, 0.5 = flat oval.
-export const GALAXY_ELLIPSE = 0.7;
-
 // How many radians the spiral rotates from centre to edge.
 // Higher = tighter/more wound spiral. Used in both star gen and nebula placement.
-export const SPIRAL_TWIST = 2.3;
+export const SPIRAL_TWISTS: Record<number, number> = {
+    2: 3,
+    3: 2.3,
+    4: 1.5
+}
 
 // ─── Star generation ─────────────────────────────────────────────────────────
 
@@ -46,8 +43,6 @@ export const ARM_SPREAD_BASE = 0.3;
 // Multiplier for the size of each star.
 export const STAR_SIZE_MULTIPLIER = 0.5;
 
-export const NUM_STARS = 320;
-
 // ─── Hyperlanes ──────────────────────────────────────────────────────────────
 
 // Maximum world-space pixel distance between two stars that can be connected
@@ -67,10 +62,21 @@ export const BACKGROUND_STAR_AREA_Y = 4000;
 // ─── Nebula ──────────────────────────────────────────────────────────────────
 
 // Colours blended across all nebula arm particles.
-export const NEBULA_COLORS = [0x8822cc, 0xcc3366, 0x4422bb];
+export const NEBULA_COLORS = [
+    [0x8822cc, 0xcc3366, 0x4422bb], // Purplish red
+    [0x8822cc, 0x3366cc, 0x4422bb], // Purplish blue
+    [0x22aacc, 0x2255dd, 0x0088bb], // Teal/cyan
+    [0xdd4411, 0xcc7722, 0xaa2200], // Ember orange
+    [0x22cc88, 0x11aa55, 0x2299aa], // Seafoam green
+    [0xcc22aa, 0xaa1166, 0xdd44cc], // Hot pink/magenta
+    [0x5544dd, 0x2211aa, 0x8866ff], // Deep indigo
+    [0xcc8822, 0xdd5511, 0xbbaa00], // Golden amber
+    [0x11ccaa, 0x2288dd, 0x00bbcc], // Arctic blue-green
+    [0xaa2288, 0x5511cc, 0xdd1166], // Violet crimson
+];
 
 // How many blob positions are sampled along each arm (before random skipping).
-export const NEBULA_STEPS = 22;
+export const NEBULA_STEPS = 25;
 
 // Probability (0–1) that any given step position is skipped, creating gaps.
 export const NEBULA_SKIP_CHANCE = 0;
@@ -85,7 +91,7 @@ export const NEBULA_SPREAD = 0.19;
 export const NEBULA_RADIUS_MULTIPLIER = 0.25;
 
 // Controls where nebula blobs start.
-export const NEBULA_CLOUD_OFFSET = 150;
+export const NEBULA_CLOUD_OFFSET = 120;
 
 // ─── Galactic core glow ──────────────────────────────────────────────────────
 

@@ -1,10 +1,7 @@
 import { Delaunay } from 'd3-delaunay';
-import type { Galaxy, StarSystem, Hyperlane, StarType, BackgroundStar } from './types';
+import type { Galaxy, StarSystem, Hyperlane, StarType, BackgroundStar, Rng } from './types';
 import {
   GALAXY_RADIUS,
-  N_ARMS,
-  GALAXY_ELLIPSE,
-  SPIRAL_TWIST,
   BULGE_FRACTION,
   BULGE_RADIUS_FRACTION,
   BULGE_ELLIPSE,
@@ -16,11 +13,9 @@ import {
   BACKGROUND_STAR_COUNT,
   BACKGROUND_STAR_AREA_X,
   BACKGROUND_STAR_AREA_Y,
-  STAR_SIZE_MULTIPLIER,
-  NUM_STARS,
+  STAR_SIZE_MULTIPLIER
 } from './constants';
-
-type Rng = () => number;
+import { GalaxyConfig } from './galaxyConfig';
 
 // Fast seedable PRNG (mulberry32). Returns a function that produces [0, 1) floats.
 function mulberry32(seed: number): Rng {
@@ -90,8 +85,9 @@ function canConnect(armA: number | null, armB: number | null): boolean {
 function bridgeComponents(
   hyperlanes: Hyperlane[],
   positions: [number, number][],
+  config: GalaxyConfig
 ): Hyperlane[] {
-  const parent = Array.from({ length: NUM_STARS }, (_, i) => i);
+  const parent = Array.from({ length: config.numStars }, (_, i) => i);
 
   function find(x: number): number {
     while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; }
@@ -105,10 +101,10 @@ function bridgeComponents(
   for (const { from, to } of hyperlanes) union(from, to);
 
   const bridges: Hyperlane[] = [];
-  for (let i = 0; i < NUM_STARS; i++) {
+  for (let i = 0; i < config.numStars; i++) {
     if (find(i) === find(0)) continue;
     let nearestDist = Infinity, nearestNode = -1;
-    for (let j = 0; j < NUM_STARS; j++) {
+    for (let j = 0; j < config.numStars; j++) {
       if (find(j) !== find(0)) continue;
       const deltaX = positions[i][0] - positions[j][0];
       const deltaY = positions[i][1] - positions[j][1];
@@ -128,8 +124,9 @@ export function generateGalaxy(seed = Date.now()): Galaxy {
   const rng = mulberry32(seed);
   const positions: [number, number][] = [];
   const armIndices: (number | null)[] = [];
+  const config = new GalaxyConfig(rng);
 
-  for (let i = 0; i < NUM_STARS; i++) {
+  for (let i = 0; i < config.numStars; i++) {
     let x: number, y: number;
 
     if (rng() < BULGE_FRACTION) {
@@ -139,15 +136,15 @@ export function generateGalaxy(seed = Date.now()): Galaxy {
       y = Math.sin(angle) * radius * BULGE_ELLIPSE;
       armIndices.push(null);
     } else {
-      const arm         = Math.floor(rng() * N_ARMS);
+      const arm         = Math.floor(rng() * config.numArms);
       const armFraction = Math.pow(rng(), ARM_T_POWER);
       const radius      = lerp(GALAXY_RADIUS * ARM_INNER_FRACTION, GALAXY_RADIUS, armFraction);
-      const baseAngle   = (arm / N_ARMS) * Math.PI * 2;
-      const spiralAngle = baseAngle + armFraction * Math.PI * SPIRAL_TWIST;
+      const baseAngle   = (arm / config.numArms) * Math.PI * 2 + config.baseAngleOffset;
+      const spiralAngle = baseAngle + armFraction * Math.PI * config.spiralTwist;
       const spread      = GALAXY_RADIUS * ARM_SPREAD * (ARM_SPREAD_BASE + armFraction);
 
       x = Math.cos(spiralAngle) * radius + (rng() - 0.5) * 2 * spread;
-      y = Math.sin(spiralAngle) * radius * GALAXY_ELLIPSE + (rng() - 0.5) * 2 * spread;
+      y = Math.sin(spiralAngle) * radius * config.galaxyEllipse + (rng() - 0.5) * 2 * spread;
 
       armIndices.push(arm);
     }
@@ -192,7 +189,7 @@ export function generateGalaxy(seed = Date.now()): Galaxy {
     }
   }
 
-  const bridges = bridgeComponents(hyperlanes, positions);
+  const bridges = bridgeComponents(hyperlanes, positions, config);
   hyperlanes.push(...bridges);
 
   const backgroundStars: BackgroundStar[] = Array.from({ length: BACKGROUND_STAR_COUNT }, () => ({
@@ -201,5 +198,5 @@ export function generateGalaxy(seed = Date.now()): Galaxy {
     brightness: rng(),
   }));
 
-  return { systems, hyperlanes, backgroundStars, seed };
+  return { systems, hyperlanes, backgroundStars, config, seed };
 }

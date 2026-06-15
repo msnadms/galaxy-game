@@ -1,15 +1,11 @@
 import { Application, extend, useApplication } from '@pixi/react';
-import { Container, Graphics, FederatedPointerEvent, Ticker, Sprite, Texture } from 'pixi.js';
+import { Container, Graphics, FederatedPointerEvent, Ticker, Sprite, Texture, BlurFilter } from 'pixi.js';
 import { useCallback, useEffect, useRef, memo, useMemo } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useUIStore } from '../store/uiStore';
 import type { Galaxy, StarSystem } from '../game/types';
 import {
-  N_ARMS,
   GALAXY_RADIUS,
-  GALAXY_ELLIPSE,
-  SPIRAL_TWIST,
-  NEBULA_COLORS,
   NEBULA_STEPS,
   NEBULA_SKIP_CHANCE,
   NEBULA_PARTICLES_PER_STEP,
@@ -43,6 +39,7 @@ function GalaxyWorld() {
   const galaxy = useGameStore((s) => s.galaxy);
   const selectSystem = useUIStore((s) => s.selectSystem);
   const showHyperlanes = useUIStore((s) => s.showHyperlanes);
+  const config = galaxy.config;
 
   const worldRef = useRef<Container>(null);
   const camera = useRef({ x: 0, y: 0, scale: CAMERA_INITIAL_SCALE });
@@ -137,21 +134,21 @@ function GalaxyWorld() {
     const nebulaContainer = new Container();
     const nebulaGfx = new Graphics();
 
-    for (let arm = 0; arm < N_ARMS; arm++) {
-      const baseAngle = (arm / N_ARMS) * Math.PI * 2;
+    for (let arm = 0; arm < config.numArms; arm++) {
+      const baseAngle = (arm / config.numArms) * Math.PI * 2 + config.baseAngleOffset;
 
       for (let step = 0; step < NEBULA_STEPS; step++) {
         if (Math.random() < NEBULA_SKIP_CHANCE) continue;
 
         const stepFraction = (step + 1) / (NEBULA_STEPS + 1);
         const radius = GALAXY_RADIUS * stepFraction;
-        const angle = baseAngle + stepFraction * Math.PI * SPIRAL_TWIST;
+        const angle = baseAngle + stepFraction * Math.PI * config.spiralTwist;
         const cloudX = Math.cos(angle) * radius;
-        const cloudY = Math.sin(angle) * radius * GALAXY_ELLIPSE;
+        const cloudY = Math.sin(angle) * radius * config.galaxyEllipse;
 
         let blobScale = NEBULA_RADIUS_MULTIPLIER;
         let cloudsPerStep = NEBULA_PARTICLES_PER_STEP;
-        if (Math.abs(cloudX) < NEBULA_CLOUD_OFFSET && Math.abs(cloudY) < NEBULA_CLOUD_OFFSET * GALAXY_ELLIPSE) {
+        if (Math.abs(cloudX) < NEBULA_CLOUD_OFFSET && Math.abs(cloudY) < NEBULA_CLOUD_OFFSET * config.galaxyEllipse) {
           blobScale = 1.5;
           cloudsPerStep = 20;
         }
@@ -160,14 +157,15 @@ function GalaxyWorld() {
 
         for (let p = 0; p < cloudsPerStep; p++) {
           const offsetX = ((Math.random() + Math.random()) / 2 - 0.5) * 2 * spread;
-          const offsetY = ((Math.random() + Math.random()) / 2 - 0.5) * 2 * spread * GALAXY_ELLIPSE;
+          const offsetY = ((Math.random() + Math.random()) / 2 - 0.5) * 2 * spread * config.galaxyEllipse;
           const particleRadius = spread * (0.15 + Math.random() * 0.45) * blobScale;
-          const colorList = Math.random() < stepFraction + 0.15 ? NEBULA_COLORS : CORE_COLORS;
+          const colorList = Math.random() < stepFraction + 0.05 
+            ? config.nebulaColors
+            : CORE_COLORS;
           const nebulaColor = colorList[Math.floor(Math.random() * colorList.length)];
 
           nebulaGfx.circle(cloudX + offsetX, cloudY + offsetY, particleRadius);
-          const alpha = 0.014 + Math.random() * 0.024;
-          nebulaGfx.fill({ color: nebulaColor, alpha: alpha });
+          nebulaGfx.fill({ color: nebulaColor, alpha: (0.014 + Math.random() * 0.024) * Math.max(1 - stepFraction, 0.5) });
         }
       }
     }
@@ -177,11 +175,16 @@ function GalaxyWorld() {
       const offsetX = ((Math.random() + Math.random()) / 2 - 0.5) * 2 * CORE_ELLIPSE_X;
       const offsetY = ((Math.random() + Math.random()) / 2 - 0.5) * 2 * CORE_ELLIPSE_Y;
       const particleRadius = 20 + Math.random() * 60;
-      const coreColor = CORE_COLORS[Math.floor(Math.random() * CORE_COLORS.length)]
+      const coreColor = CORE_COLORS[Math.floor(Math.random() * CORE_COLORS.length)];
 
       coreGfx.circle(offsetX, offsetY, particleRadius);
       coreGfx.fill({ color: coreColor, alpha: 0.012 + Math.random() * 0.018 });
     }
+
+    nebulaGfx.blendMode = 'add';
+    coreGfx.blendMode = 'add';
+    nebulaGfx.filters = [new BlurFilter({ strength: 0.75 })];
+    coreGfx.filters = [new BlurFilter({ strength: 0.75, blendMode: 'darken'})];
 
     nebulaContainer.addChild(coreGfx);
     nebulaContainer.addChild(nebulaGfx);
@@ -214,7 +217,7 @@ function GalaxyWorld() {
 
       // Nebula slowly "breathes" — alpha oscillates between 0.5 and 1.0 over ~25 seconds.
       // Math.sin returns -1 to 1, so 0.75 + sin * 0.25 gives 0.5 to 1.0.
-      nebulaContainer.alpha = 0.75 + Math.sin(elapsedSecs * 0.6) * 0.25;
+      nebulaContainer.alpha = 1 + Math.sin(elapsedSecs * 0.6) * 0.25
 
       // Dim stars pulse between alpha 0.25 and 0.80 at 1.5 Hz (1.5 cycles per second).
       // Math.abs(Math.sin()) keeps alpha positive — it bounces 0→1→0→1 instead of going negative.
