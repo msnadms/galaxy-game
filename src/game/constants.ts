@@ -7,10 +7,10 @@ export const GALAXY_RADIUS = 720;
 // How many radians the spiral rotates from centre to edge.
 // Higher = tighter/more wound spiral. Used in both star gen and nebula placement.
 export const SPIRAL_TWISTS: Record<number, number> = {
-    2: 3,
-    3: 2.3,
-    4: 1.5,
-    5: 1.2
+    2: 3.5,
+    3: 2.7,
+    4: 2,
+    5: 1.7
 }
 
 // ─── Star generation ─────────────────────────────────────────────────────────
@@ -87,18 +87,14 @@ export const INNER_NEBULA_COLORS = [
 export const NEBULA_COLORS = [
     [0x8822cc, 0xcc3366, 0x4422bb], // Purplish red
     [0x8822cc, 0x3366cc, 0x4422bb], // Purplish blue
-    [0x22aacc, 0x2255dd, 0x0088bb], // Teal/cyan
     [0xdd4411, 0xcc7722, 0xaa2200], // Ember orange
-    [0x22cc88, 0x11aa55, 0x2299aa], // Seafoam green
-    [0xcc22aa, 0xaa1166, 0xdd44cc], // Hot pink/magenta
     [0x5544dd, 0x2211aa, 0x8866ff], // Deep indigo
     [0xcc8822, 0xdd5511, 0xbbaa00], // Golden amber
-    [0x11ccaa, 0x2288dd, 0x00bbcc], // Arctic blue-green
     [0xaa2288, 0x5511cc, 0xdd1166], // Violet crimson
 ];
 
 // How many blob positions are sampled along each arm (before random skipping).
-export const NEBULA_STEPS = 25;
+export const NEBULA_STEPS = 30;
 
 // Probability (0–1) that any given step position is skipped, creating gaps.
 export const NEBULA_SKIP_CHANCE = 0;
@@ -107,7 +103,7 @@ export const NEBULA_SKIP_CHANCE = 0;
 export const NEBULA_PARTICLES_PER_STEP = 1000;
 
 // Controls how wide each blob cloud is relative to GALAXY_RADIUS.
-export const NEBULA_SPREAD = 0.21;
+export const NEBULA_SPREAD = 0.15;
 
 // Controls how large each blob is.
 export const NEBULA_RADIUS_MULTIPLIER = 0.25;
@@ -116,7 +112,7 @@ export const NEBULA_RADIUS_MULTIPLIER = 0.25;
 export const NEBULA_DISPLACEMENT_SCALE = 22;
 
 // Controls where nebula blobs start.
-export const NEBULA_CLOUD_OFFSET = 120;
+export const NEBULA_CLOUD_OFFSET = 100;
 
 // ─── Galactic core glow ──────────────────────────────────────────────────────
 

@@ -9,6 +9,7 @@ export const HyperlaneLayer = memo(function HyperlaneLayer({ galaxy }: { galaxy:
       for (const lane of galaxy.hyperlanes) {
         const from = galaxy.systems[lane.from];
         const to   = galaxy.systems[lane.to];
+        if (!from || !to) continue;
         gfx.moveTo(from.x, from.y);
         gfx.lineTo(to.x, to.y);
       }

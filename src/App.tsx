@@ -2,9 +2,10 @@ import { GalaxyStage } from './pixi/GalaxyStage';
 import { ConfigPanel } from './ui/ConfigPanel';
 import { useUIStore } from './store/uiStore';
 import { useGameStore } from './store/gameStore';
+import type { StarType } from './game/types';
 import './App.css';
 
-const STAR_TYPE_LABELS: Record<string, string> = {
+const STAR_TYPE_LABELS: Record<StarType, string> = {
   G: 'G-class (Yellow Dwarf)',
   K: 'K-class (Orange Dwarf)',
   M: 'M-class (Red Dwarf)',

@@ -22,7 +22,7 @@ import {
 import { GalaxyConfig } from './galaxyConfig';
 
 // Fast seedable PRNG (mulberry32). Returns a function that produces [0, 1) floats.
-function mulberry32(seed: number): Rng {
+export function createRng(seed: number): Rng {
   return function () {
     seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
     let hash = Math.imul(seed ^ (seed >>> 15), 1 | seed);
@@ -93,7 +93,7 @@ function lerp(start: number, end: number, t: number) {
 
 
 export function generateGalaxy(seed = Date.now()): Galaxy {
-  const rng = mulberry32(seed);
+  const rng = createRng(seed);
   const positions: [number, number][] = [];
   const armIndices: (number | null)[] = [];
   const armFractions: (number | null)[] = [];
@@ -132,7 +132,7 @@ export function generateGalaxy(seed = Date.now()): Galaxy {
       const spread = GALAXY_RADIUS * ARM_SPREAD * (ARM_SPREAD_BASE + armFraction);
 
       x = Math.cos(spiralAngle) * radius + (rng() - 0.5) * 2 * spread;
-      y = Math.sin(spiralAngle) * radius * config.galaxyEllipse + (rng() - 0.5) * 2 * spread;
+      y = Math.sin(spiralAngle) * radius * config.galaxyEllipse + (rng() - 0.5) * 2 * spread * config.galaxyEllipse;
 
       armIndices.push(arm);
       armFractions.push(armFraction);
