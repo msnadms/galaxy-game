@@ -3,6 +3,7 @@ import { Supercluster } from './pixi/Supercluster';
 import { ConfigPanel } from './ui/ConfigPanel';
 import { useUIStore } from './store/uiStore';
 import { useGameStore } from './store/gameStore';
+import { generateGalaxyName } from './game/superclusters';
 import type { StarType } from './game/types';
 import './App.css';
 
@@ -18,6 +19,7 @@ export default function App() {
   const view = useUIStore((s) => s.view);
   const setView = useUIStore((s) => s.setView);
   const selectedId = useUIStore((s) => s.selectedSystemId);
+  const galaxySeed = useGameStore((s) => s.galaxy.seed);
   const galaxy = useGameStore((s) => s.galaxy);
   const system = selectedId !== null ? galaxy.systems[selectedId] : null;
 
@@ -32,6 +34,9 @@ export default function App() {
         )}
         <ConfigPanel />
       </div>
+      {view === 'galaxy' && (
+        <div className="galaxy-title">{generateGalaxyName(galaxySeed)}</div>
+      )}
       {view === 'galaxy' && system && (
         <div className="system-panel">
           <div className="system-panel-name">{system.name}</div>

@@ -6,17 +6,16 @@ import { useUIStore } from '../store/uiStore';
 import type { SuperclusterDot } from '../game/types';
 import { useCamera } from './useCamera';
 import { createDisplacementSetup } from './textures';
+import { SC_CAMERA_INITIAL_SCALE } from '../game/constants';
 
 extend({ Container, Graphics });
 
-const SC_CAMERA_INITIAL_SCALE = 0.55;
-
 const BRIGHTNESS_TIERS = [
-  { min: 0.80, radius: 3.5, color: 0xffffff, alpha: 1.00 },
-  { min: 0.60, radius: 2.8, color: 0xeeeeff, alpha: 0.88 },
-  { min: 0.40, radius: 2.3, color: 0xccccdd, alpha: 0.72 },
-  { min: 0.20, radius: 1.8, color: 0xaaaacc, alpha: 0.55 },
-  { min: -Infinity, radius: 1.4, color: 0x8899bb, alpha: 0.35 },
+  { min: 0.80, radius: 3.5, color: 0xffee00, alpha: 1.00 },
+  { min: 0.60, radius: 2.8, color: 0xff8800, alpha: 0.96 },
+  { min: 0.40, radius: 2.3, color: 0xff0088, alpha: 0.88 },
+  { min: 0.20, radius: 1.8, color: 0xaa00ff, alpha: 0.75 },
+  { min: -Infinity, radius: 1.4, color: 0x6600cc, alpha: 0.55 },
 ];
 
 export function Supercluster() {

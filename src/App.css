@@ -35,6 +35,21 @@
   border-color: rgba(60, 110, 160, 0.7);
 }
 
+.galaxy-title {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #c8d8f0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  pointer-events: none;
+  user-select: none;
+  text-shadow: 0 0 20px rgba(100, 160, 255, 0.4);
+}
+
 .system-panel {
   position: absolute;
   top: 20px;

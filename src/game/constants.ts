@@ -125,10 +125,32 @@ export const CORE_COLORS = [0xffffff, 0xffe8c0]
 export const CORE_ELLIPSE_X = 180;
 export const CORE_ELLIPSE_Y = 110;
 
+// ─── Supercluster generation ─────────────────────────────────────────────────
+
+// Half-width/height of the attractor placement area in world-space units.
+export const SC_WORLD_HALF = 1200;
+
+// How many galaxy-cluster "attractors" (dense nodes) to place in the supercluster.
+export const SC_ATTRACTOR_COUNT = 8;
+
+// Base number of galaxy dots placed in the Gaussian cluster around each attractor.
+// Scaled by the attractor's strength, so stronger attractors get more dots.
+export const SC_CLUSTER_DOTS_PER_ATTRACTOR = 1200;
+
+// Standard deviation of the cluster Gaussian as a fraction of SC_WORLD_HALF.
+export const SC_CLUSTER_SIGMA = 0.16;
+
+// Number of galaxy dots placed along each filament curve.
+export const SC_FILAMENT_DOTS_PER_EDGE = 250;
+
+// Base scatter width for filament dots as a fraction of SC_WORLD_HALF.
+export const SC_FILAMENT_SCATTER = 0.025;
+
 // ─── Camera ──────────────────────────────────────────────────────────────────
 
 // Starting zoom level. 1.0 = 1:1 pixels, < 1 = zoomed out.
 export const CAMERA_INITIAL_SCALE = 0.65;
+export const SC_CAMERA_INITIAL_SCALE = 0.55;
 
 // Minimum and maximum allowed zoom levels.
 export const CAMERA_MIN_SCALE = 0.12;

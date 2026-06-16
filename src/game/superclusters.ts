@@ -1,12 +1,25 @@
 import { Delaunay } from 'd3-delaunay';
 import { createRng } from './galaxyGen';
 import type { SuperclusterData, SuperclusterAttractor, SuperclusterFilament, SuperclusterDot, BackgroundStar, Rng } from './types';
-import { BACKGROUND_STAR_COUNT, BACKGROUND_STAR_AREA_X, BACKGROUND_STAR_AREA_Y } from './constants';
+import {
+  BACKGROUND_STAR_COUNT, BACKGROUND_STAR_AREA_X, BACKGROUND_STAR_AREA_Y,
+  SC_WORLD_HALF, SC_ATTRACTOR_COUNT, SC_CLUSTER_DOTS_PER_ATTRACTOR,
+  SC_CLUSTER_SIGMA, SC_FILAMENT_DOTS_PER_EDGE, SC_FILAMENT_SCATTER,
+} from './constants';
 
 const CLUSTER_ROOTS = ['Vel', 'Kor', 'Dra', 'Lyx', 'Aur', 'Per', 'Cen', 'Vir', 'Com', 'For', 'Boo', 'Sag', 'Pav', 'Hydr', 'Phe'];
 const CLUSTER_ENDINGS = ['ara', 'eth', 'um', 'ius', 'is', 'ax', 'on', 'el', 'an', 'or'];
 const CLUSTER_SUFFIXES = [' Cluster', ' Wall', ' Void', ' Nexus', ' Complex', ' Cloud'];
 const SUPERCLUSTER_SUFFIXES = [' Supercluster', ' Filament', ' Sheet', ' Wall', ' Complex', ' Web'];
+const GALAXY_SUFFIXES = [' Galaxy', ' Dwarf', ' Spiral', ' System', ' Expanse', ' Domain'];
+
+export function generateGalaxyName(seed: number): string {
+  const rng = createRng(seed);
+  const root   = CLUSTER_ROOTS[Math.floor(rng() * CLUSTER_ROOTS.length)];
+  const ending = CLUSTER_ENDINGS[Math.floor(rng() * CLUSTER_ENDINGS.length)];
+  const suffix = GALAXY_SUFFIXES[Math.floor(rng() * GALAXY_SUFFIXES.length)];
+  return `${root}${ending}${suffix}`;
+}
 
 function makeClusterName(rng: Rng): string {
   const root   = CLUSTER_ROOTS[Math.floor(rng() * CLUSTER_ROOTS.length)];
@@ -15,23 +28,13 @@ function makeClusterName(rng: Rng): string {
   return `${root}${ending}${suffix}`;
 }
 
-// Half-width/height of the attractor placement area in world-space units.
-const WORLD_HALF = 1200;
-// How many galaxy-cluster "attractors" (dense nodes) to place in the supercluster.
-const ATTRACTOR_COUNT = 8;
-// Base number of galaxy dots placed in the Gaussian cluster around each attractor.
-// Scaled by the attractor's strength, so stronger attractors get more dots.
-const CLUSTER_DOTS_PER_ATTRACTOR = 1200;
-// Standard deviation of the cluster Gaussian as a fraction of WORLD_HALF.
-// 0.10 × 1200 = 120 world units.
-const CLUSTER_SIGMA = 0.16;
-// Number of galaxy dots placed along each filament curve.
-const FILAMENT_DOTS_PER_EDGE = 250;
-// Base scatter width for filament dots as a fraction of WORLD_HALF.
-// Controls how thin the thread is at its narrowest point.
-const FILAMENT_SCATTER = 0.025;
 
-export function generateSupercluster(seed: number = Date.now()): SuperclusterData {
+function todaySeed(): number {
+  const d = new Date();
+  return d.getDate() * 1_000_000 + (d.getMonth() + 1) * 10_000 + d.getFullYear();
+}
+
+export function generateSupercluster(seed: number = todaySeed()): SuperclusterData {
   const rng = createRng(seed);
 
   const scRoot   = CLUSTER_ROOTS[Math.floor(rng() * CLUSTER_ROOTS.length)];
@@ -40,13 +43,13 @@ export function generateSupercluster(seed: number = Date.now()): SuperclusterDat
   const name = `${scRoot}${scEnding}${scSuffix}`;
 
   const attractors: SuperclusterAttractor[] = [];
-  for (let i = 0; i < ATTRACTOR_COUNT; i++) {
+  for (let i = 0; i < SC_ATTRACTOR_COUNT; i++) {
     let bestX = 0, bestY = 0, bestDist = -1;
     const candidates = i === 0 ? 1 : 12;
 
     for (let attempt = 0; attempt < candidates; attempt++) {
-      const cx = (rng() * 2 - 1) * WORLD_HALF;
-      const cy = (rng() * 2 - 1) * WORLD_HALF;
+      const cx = (rng() * 2 - 1) * SC_WORLD_HALF;
+      const cy = (rng() * 2 - 1) * SC_WORLD_HALF;
       let minDist = Infinity;
       for (const a of attractors) {
         const d = Math.hypot(cx - a.x, cy - a.y);
@@ -82,12 +85,12 @@ export function generateSupercluster(seed: number = Date.now()): SuperclusterDat
   }
 
   const dots: SuperclusterDot[] = [];
-  const sigma = CLUSTER_SIGMA * WORLD_HALF;
+  const sigma = SC_CLUSTER_SIGMA * SC_WORLD_HALF;
   let dotIndex = 0;
 
   // Box-Muller transform for Gaussian distribution of galaxies in attractors
   for (const att of attractors) {
-    const count = Math.round(CLUSTER_DOTS_PER_ATTRACTOR * att.strength);
+    const count = Math.round(SC_CLUSTER_DOTS_PER_ATTRACTOR * att.strength);
     for (let i = 0; i < count; i++) {
       const u1 = Math.max(rng(), 1e-10);
       const u2 = rng();
@@ -99,11 +102,12 @@ export function generateSupercluster(seed: number = Date.now()): SuperclusterDat
       const radialFade = Math.exp(-mag / (sigma * 1.2));
       const brightness = (0.5 + rng() * 0.5) * radialFade;
       if (brightness < 0.02) { continue; }
-      dots.push({ x: att.x + dx, y: att.y + dy, brightness, seed: (seed ^ (dotIndex++ * 2654435761)) >>> 0, visited: false });
+      const dotSeed = (seed ^ (dotIndex++ * 2654435761)) >>> 0;
+      dots.push({ x: att.x + dx, y: att.y + dy, brightness, seed: dotSeed, name: generateGalaxyName(dotSeed), visited: false });
     }
   }
 
-  const filamentScatterW = FILAMENT_SCATTER * WORLD_HALF;
+  const filamentScatterW = SC_FILAMENT_SCATTER * SC_WORLD_HALF;
 
   for (const fil of filaments) {
     const A = attractors[fil.from];
@@ -116,7 +120,7 @@ export function generateSupercluster(seed: number = Date.now()): SuperclusterDat
     const cx = (A.x + B.x) / 2 + (-dy / len) * curvature;
     const cy = (A.y + B.y) / 2 + ( dx / len) * curvature;
 
-    for (let i = 0; i < FILAMENT_DOTS_PER_EDGE; i++) {
+    for (let i = 0; i < SC_FILAMENT_DOTS_PER_EDGE; i++) {
       const t = rng();
       const centerFrac = Math.sin(t * Math.PI) - 0.25;
 
@@ -140,12 +144,14 @@ export function generateSupercluster(seed: number = Date.now()): SuperclusterDat
 
       const brightness = (0.1 + rng() * 0.6) * perpFade;
       if (brightness < 0.02) { continue; }
+      const dotSeed = (seed ^ (dotIndex++ * 2654435761)) >>> 0;
       dots.push({
         x: bx + perpX * scatter,
         y: by + perpY * scatter,
         brightness,
-        seed: (seed ^ (dotIndex++ * 2654435761)) >>> 0,
-        visited: false
+        seed: dotSeed,
+        name: generateGalaxyName(dotSeed),
+        visited: false,
       });
     }
   }
