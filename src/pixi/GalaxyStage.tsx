@@ -1,5 +1,5 @@
 import { Application, extend, useApplication } from '@pixi/react';
-import { Container, Graphics, Ticker, Sprite, BlurFilter, DisplacementFilter } from 'pixi.js';
+import { Container, Graphics, Ticker, Sprite, BlurFilter } from 'pixi.js';
 import { useEffect, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useUIStore } from '../store/uiStore';
@@ -18,7 +18,7 @@ import {
   NEBULA_DISPLACEMENT_SCALE,
   CORE_COLORS,
 } from '../game/constants';
-import { createDisplacementTexture } from './textures';
+import { createDisplacementSetup } from './textures';
 import { createRng } from '../game/galaxyGen';
 import { HyperlaneLayer } from './HyperlaneLayer';
 import { StarNode } from './StarNode';
@@ -43,7 +43,7 @@ function GalaxyWorld() {
   const config = galaxy.config;
 
   const worldRef = useRef<Container>(null);
-  const camera = useCamera(worldRef, CAMERA_INITIAL_SCALE, () => selectSystem(null));
+  const { camera, isReady } = useCamera(worldRef, CAMERA_INITIAL_SCALE, () => selectSystem(null));
 
   useEffect(() => {
     if (!isInitialised || !worldRef.current) return;
@@ -129,19 +129,10 @@ function GalaxyWorld() {
     nebulaGfx.filters = [new BlurFilter({ strength: 0.75 })];
     coreGfx.filters = [new BlurFilter({ strength: 0.75, blendMode: 'add' })];
 
-    const dispTexture = createDisplacementTexture();
-    const dispSprite = new Sprite(dispTexture);
-    dispSprite.anchor.set(0.5);
-    dispSprite.width = GALAXY_RADIUS * 3;
-    dispSprite.height = GALAXY_RADIUS * 3;
-    dispSprite.renderable = false;
-
-    const dispFilter = new DisplacementFilter({ sprite: dispSprite, scale: NEBULA_DISPLACEMENT_SCALE });
-    nebulaContainer.filters = [dispFilter];
+    const disp = createDisplacementSetup(nebulaContainer, NEBULA_DISPLACEMENT_SCALE);
 
     nebulaContainer.addChild(coreGfx);
     nebulaContainer.addChild(nebulaGfx);
-    nebulaContainer.addChild(dispSprite);
 
     const dimGfx = new Graphics();
     for (const star of galaxy.backgroundStars) {
@@ -169,12 +160,7 @@ function GalaxyWorld() {
     let elapsedSecs = 0;
     const tick = (ticker: Ticker) => {
       elapsedSecs += ticker.deltaMS / 1000;
-      dispSprite.x = Math.sin(elapsedSecs * 0.06) * 120;
-      dispSprite.y = Math.cos(elapsedSecs * 0.045) * 120;
-      dispSprite.rotation = elapsedSecs * 0.008;
-      const displacement = NEBULA_DISPLACEMENT_SCALE * camera.current.scale;
-      dispFilter.scale.x = displacement;
-      dispFilter.scale.y = displacement;
+      disp.update(elapsedSecs, NEBULA_DISPLACEMENT_SCALE * camera.current.scale);
       dimGfx.alpha = 0.25 + Math.abs(Math.sin(elapsedSecs * 1.5)) * 0.55;
       brightGfx.alpha = 0.5 + Math.abs(Math.sin(elapsedSecs * 2.0 + 1.0)) * 0.5;
     };
@@ -187,13 +173,13 @@ function GalaxyWorld() {
       world.removeChild(nebulaContainer);
       stage.removeChild(bgContainer);
       nebulaContainer.destroy({ children: true });
-      dispTexture.destroy(true);
+      disp.destroy();
       bgContainer.destroy({ children: true });
     };
   }, [galaxy, app, isInitialised]);
 
   return (
-    <pixiContainer ref={worldRef}>
+    <pixiContainer ref={worldRef} visible={isReady}>
       {showHyperlanes && <HyperlaneLayer galaxy={galaxy} />}
       {galaxy.systems.map((system) => (
         <StarNode key={system.id} system={system} onSelect={selectSystem} />

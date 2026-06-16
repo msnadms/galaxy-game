@@ -1,4 +1,5 @@
-import { Texture } from 'pixi.js';
+import { Texture, Sprite, DisplacementFilter, Container } from 'pixi.js';
+import { GALAXY_RADIUS } from '../game/constants';
 
 export function createDisplacementTexture(size = 512, lowRes = 64): Texture {
   const tmp = document.createElement('canvas');
@@ -22,6 +23,32 @@ export function createDisplacementTexture(size = 512, lowRes = 64): Texture {
   ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(tmp, 0, 0, size, size);
   return Texture.from(canvas);
+}
+
+export function createDisplacementSetup(container: Container, initialScale: number) {
+  const dispTexture = createDisplacementTexture();
+  const dispSprite = new Sprite(dispTexture);
+  dispSprite.anchor.set(0.5);
+  dispSprite.width = GALAXY_RADIUS * 3;
+  dispSprite.height = GALAXY_RADIUS * 3;
+  dispSprite.renderable = false;
+
+  const dispFilter = new DisplacementFilter({ sprite: dispSprite, scale: initialScale });
+  container.filters = [dispFilter];
+  container.addChild(dispSprite);
+
+  return {
+    update(elapsedSecs: number, filterScale: number) {
+      dispSprite.x = Math.sin(elapsedSecs * 0.06) * 120;
+      dispSprite.y = Math.cos(elapsedSecs * 0.045) * 120;
+      dispSprite.rotation = elapsedSecs * 0.008;
+      dispFilter.scale.x = filterScale;
+      dispFilter.scale.y = filterScale;
+    },
+    destroy() {
+      dispTexture.destroy(true);
+    },
+  };
 }
 
 export function createStarTexture(color: number, size: number): Texture {

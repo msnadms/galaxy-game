@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useApplication } from '@pixi/react';
 import type { Container, FederatedPointerEvent } from 'pixi.js';
 import {
@@ -15,6 +15,7 @@ export function useCamera(
 ) {
   const { app, isInitialised } = useApplication();
   const camera = useRef({ x: 0, y: 0, scale: initialScale });
+  const [isReady, setIsReady] = useState(false);
   const isDragging = useRef(false);
   const hasDragged = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
@@ -26,6 +27,7 @@ export function useCamera(
     camera.current.y = app.screen.height / 2;
     worldRef.current.position.set(camera.current.x, camera.current.y);
     worldRef.current.scale.set(camera.current.scale);
+    setIsReady(true);
   }, [app, isInitialised]);
 
   useEffect(() => {
@@ -91,5 +93,5 @@ export function useCamera(
     };
   }, [app, isInitialised, onStageTap]);
 
-  return camera;
+  return { camera, isReady };
 }

@@ -8,18 +8,14 @@ export function ConfigPanel() {
   const showHyperlanes = useUIStore((s) => s.showHyperlanes);
   const toggleHyperlanes = useUIStore((s) => s.toggleHyperlanes);
   const view = useUIStore((s) => s.view);
-  const setView = useUIStore((s) => s.setView);
-  const seed = useGameStore((s) => s.galaxy.seed);
-  const regenerateGalaxy = useGameStore((s) => s.regenerateGalaxy);
+  const scSeed = useGameStore((s) => s.supercluster.seed);
   const regenerateSupercluster = useGameStore((s) => s.regenerateSupercluster);
   const [seedInput, setSeedInput] = useState('');
 
   function handleSeedSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     const parsed = parseInt(seedInput, 10);
-    view == 'galaxy' ? 
-      regenerateGalaxy(isNaN(parsed) ? undefined : parsed) :
-      regenerateSupercluster(isNaN(parsed) ? undefined : parsed);
+    regenerateSupercluster(isNaN(parsed) ? undefined : parsed);
     setSeedInput('');
   }
 
@@ -37,24 +33,6 @@ export function ConfigPanel() {
 
       {expanded && (
         <div className="config-body">
-          <div className="config-row config-row--view">
-            <span className="config-row-label">View</span>
-            <div className="config-view-toggle">
-              <button
-                className={`config-view-btn${view === 'galaxy' ? ' active' : ''}`}
-                onClick={() => setView('galaxy')}
-              >
-                Galaxy
-              </button>
-              <button
-                className={`config-view-btn${view === 'supercluster' ? ' active' : ''}`}
-                onClick={() => setView('supercluster')}
-              >
-                Cluster
-              </button>
-            </div>
-          </div>
-
           {view === 'galaxy' && (
             <label className="config-row">
               <span className="config-row-label">Hyperlanes</span>
@@ -70,19 +48,21 @@ export function ConfigPanel() {
             </label>
           )}
 
-          <div className="config-row config-row--seed">
-            <span className="config-row-label">Seed</span>
-            <form className="config-seed-form" onSubmit={handleSeedSubmit}>
-              <input
-                type="text"
-                className="config-seed-input"
-                placeholder={String(seed)}
-                value={seedInput}
-                onChange={(e) => setSeedInput(e.target.value)}
-              />
-              <button type="submit" className="config-seed-btn">↺</button>
-            </form>
-          </div>
+          {view === 'supercluster' && (
+            <div className="config-row config-row--seed">
+              <span className="config-row-label">Seed</span>
+              <form className="config-seed-form" onSubmit={handleSeedSubmit}>
+                <input
+                  type="text"
+                  className="config-seed-input"
+                  placeholder={String(scSeed)}
+                  value={seedInput}
+                  onChange={(e) => setSeedInput(e.target.value)}
+                />
+                <button type="submit" className="config-seed-btn">↺</button>
+              </form>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -5,6 +5,36 @@
   position: relative;
 }
 
+.top-left {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  background: rgba(6, 12, 28, 0.88);
+  border: 1px solid rgba(40, 80, 120, 0.5);
+  border-radius: 4px;
+  color: #6a90b0;
+  font-size: 12px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(4px);
+  user-select: none;
+}
+
+.back-btn:hover {
+  color: #99bbdd;
+  border-color: rgba(60, 110, 160, 0.7);
+}
+
 .system-panel {
   position: absolute;
   top: 20px;

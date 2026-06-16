@@ -5,6 +5,7 @@ import { useGameStore } from '../store/gameStore';
 import { useUIStore } from '../store/uiStore';
 import type { SuperclusterDot } from '../game/types';
 import { useCamera } from './useCamera';
+import { createDisplacementSetup } from './textures';
 
 extend({ Container, Graphics });
 
@@ -34,7 +35,7 @@ function SuperclusterWorld() {
   const setView = useUIStore((s) => s.setView);
 
   const worldRef = useRef<Container>(null);
-  const camera = useCamera(worldRef, SC_CAMERA_INITIAL_SCALE);
+  const { camera, isReady } = useCamera(worldRef, SC_CAMERA_INITIAL_SCALE);
 
   useEffect(() => {
     if (!isInitialised || !worldRef.current) return;
@@ -63,10 +64,13 @@ function SuperclusterWorld() {
     renderer.on('resize', onResize);
 
     const buckets: SuperclusterDot[][] = BRIGHTNESS_TIERS.map(() => []);
+    const visitedDots: SuperclusterDot[] = [];
     for (const dot of scData.dots) {
       buckets[BRIGHTNESS_TIERS.findIndex(t => dot.brightness > t.min)].push(dot);
+      if (dot.visited) visitedDots.push(dot);
     }
-
+    
+    const scContainer = new Container();
     const dotGfx = new Graphics();
     for (let i = 0; i < BRIGHTNESS_TIERS.length; i++) {
       for (const d of buckets[i]) dotGfx.circle(d.x, d.y, BRIGHTNESS_TIERS[i].radius);
@@ -77,7 +81,18 @@ function SuperclusterWorld() {
     dotGfx.filters = [blurFilter];
     dotGfx.blendMode = 'screen';
 
-    world.addChild(dotGfx);
+    const visitedGfx = new Graphics();
+    for (const d of visitedDots) visitedGfx.circle(d.x, d.y, 8);
+    visitedGfx.stroke({ color: 0xffffff, width: 1.5, alpha: 0.75 });
+    for (const d of visitedDots) visitedGfx.circle(d.x, d.y, 11);
+    visitedGfx.stroke({ color: 0xffffff, width: 0.5, alpha: 0.25 });
+
+    const disp = createDisplacementSetup(scContainer, 5);
+
+    scContainer.addChild(dotGfx);
+    scContainer.addChild(visitedGfx);
+
+    world.addChild(scContainer);
 
     // Starfield pulse animation
     let elapsedSecs = 0;
@@ -85,16 +100,18 @@ function SuperclusterWorld() {
       elapsedSecs += ticker.deltaMS / 1000;
       dimGfx.alpha = 0.25 + Math.abs(Math.sin(elapsedSecs * 1.5)) * 0.55;
       brightGfx.alpha = 0.5 + Math.abs(Math.sin(elapsedSecs * 2.0 + 1.0)) * 0.5;
+      disp.update(elapsedSecs, 1.5 / camera.current.scale);
     };
     Ticker.shared.add(tick);
 
     return () => {
       Ticker.shared.remove(tick);
       renderer.off('resize', onResize);
-      world.removeChild(dotGfx);
+      world.removeChild(scContainer);
       stage.removeChild(bgContainer);
+      scContainer.destroy({ children: true });
       blurFilter.destroy();
-      dotGfx.destroy(true);
+      disp.destroy();
       bgContainer.destroy({ children: true });
     };
   }, [scData, app, isInitialised]);
@@ -108,7 +125,7 @@ function SuperclusterWorld() {
       style: { fontFamily: 'sans-serif', fontSize: 90, fill: 0xddeeff, align: 'center' },
     });
     titleLabel.anchor.set(0.5, 1.0);
-    titleLabel.position.set(0, -1600);
+    titleLabel.position.set(0, -1400);
     world.addChild(titleLabel);
 
     const labelContainer = new Container();
@@ -141,6 +158,7 @@ function SuperclusterWorld() {
     const stage = app.stage;
 
     const onTap = (e: { global: { x: number; y: number } }) => {
+      if (camera.current.scale < 0.5) return;
       const local = world.toLocal(e.global);
       let nearest = scData.dots[0];
       let nearestDist = Infinity;
@@ -150,6 +168,7 @@ function SuperclusterWorld() {
       }
       const maxDist = 15 / camera.current.scale;
       if (nearestDist > maxDist) return;
+      nearest.visited = true;
       regenerateGalaxy(nearest.seed);
       setView('galaxy');
     };
@@ -158,5 +177,5 @@ function SuperclusterWorld() {
     return () => { stage.off('pointertap', onTap); };
   }, [scData, app, isInitialised, regenerateGalaxy, setView]);
 
-  return <pixiContainer ref={worldRef} />;
+  return <pixiContainer ref={worldRef} visible={isReady} />;
 }

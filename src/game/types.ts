@@ -51,6 +51,7 @@ export interface SuperclusterDot {
   y: number;
   brightness: number;
   seed: number;
+  visited: boolean;
 }
 
 export interface SuperclusterData {

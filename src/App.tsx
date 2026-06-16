@@ -16,6 +16,7 @@ const STAR_TYPE_LABELS: Record<StarType, string> = {
 
 export default function App() {
   const view = useUIStore((s) => s.view);
+  const setView = useUIStore((s) => s.setView);
   const selectedId = useUIStore((s) => s.selectedSystemId);
   const galaxy = useGameStore((s) => s.galaxy);
   const system = selectedId !== null ? galaxy.systems[selectedId] : null;
@@ -23,7 +24,14 @@ export default function App() {
   return (
     <div className="app">
       {view === 'galaxy' ? <GalaxyStage /> : <Supercluster />}
-      <ConfigPanel />
+      <div className="top-left">
+        {view === 'galaxy' && (
+          <button className="back-btn" onClick={() => setView('supercluster')}>
+            ← Supercluster
+          </button>
+        )}
+        <ConfigPanel />
+      </div>
       {view === 'galaxy' && system && (
         <div className="system-panel">
           <div className="system-panel-name">{system.name}</div>
