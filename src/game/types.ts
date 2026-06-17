@@ -37,6 +37,7 @@ export interface Galaxy {
 export interface SuperclusterAttractor {
   x: number;
   y: number;
+  z: number;
   strength: number;
   name: string;
 }
@@ -49,6 +50,7 @@ export interface SuperclusterFilament {
 export interface SuperclusterDot {
   x: number;
   y: number;
+  z: number;
   brightness: number;
   seed: number;
   name: string;
@@ -64,15 +66,16 @@ export interface SuperclusterData {
   seed: number;
 }
 
-type AddressComponentType = 'universe' | 'supercluster' | 'galaxy' | 'system'
+export type AddressComponentType = 'universe' | 'supercluster' | 'attractor' | 'galaxy' | 'system'
 
 export interface AddressComponent {
   name: string;
   x: number;
   y: number;
+  z: number;
   type: AddressComponentType
 }
 
-export function buildAddressComponent(name: string, x: number, y: number, type: AddressComponentType) {
-  return { name, x, y, type } as AddressComponent
+export function buildAddressComponent(name: string, x: number, y: number, z: number, type: AddressComponentType) {
+  return { name, x, y, z, type } as AddressComponent
 }

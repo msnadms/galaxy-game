@@ -1,4 +1,4 @@
-import { Application, extend, useApplication } from '@pixi/react';
+import { Application, useApplication } from '@pixi/react';
 import { Container, Graphics, Ticker, BlurFilter } from 'pixi.js';
 import { useEffect, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
@@ -6,7 +6,7 @@ import { useUIStore } from '../store/uiStore';
 import { buildAddressComponent, type SuperclusterDot } from '../game/types';
 import { useCamera } from './useCamera';
 import { createDisplacementSetup } from './textures';
-import { SC_CAMERA_INITIAL_SCALE, SC_WORLD_HALF, SC_WORLD_HALF_MLY } from '../game/constants';
+import { SC_CAMERA_INITIAL_SCALE, SC_WORLD_HALF, SC_WORLD_HALF_MLY, SC_ATTRACTOR_LABEL_MAX_DIST } from '../game/constants';
 import { ScaleBar } from './ScaleBar';
 import { createRng } from '../game/galaxyGen';
 import { createPointerLabel } from './labels';
@@ -34,6 +34,8 @@ function SuperclusterWorld() {
   const regenerateGalaxy = useGameStore((s) => s.regenerateGalaxy);
   const setView = useUIStore((s) => s.setView);
   const pushAddress = useUIStore((s) => s.pushAddress);
+  const removeAddressType = useUIStore((s) => s.removeAddressType);
+  const showAttractorLabels = useUIStore((s) => s.showAttractorLabels);
 
   const worldRef = useRef<Container>(null);
   const { camera, isReady } = useCamera(worldRef, SC_CAMERA_INITIAL_SCALE);
@@ -44,8 +46,8 @@ function SuperclusterWorld() {
     const stage = app.stage;
     const renderer = app.renderer;
     const rng = createRng(scData.seed);
-    const [x, y] = [rng() * 1_000_000_000, rng() * 1_000_000_000];
-    pushAddress(buildAddressComponent(scData.name, x, y, 'supercluster'))
+    const [x, y, z] = [rng() * 1_000_000_000, rng() * 1_000_000_000, rng() * 1_000_000_000];
+    pushAddress(buildAddressComponent(scData.name, x, y, z, 'supercluster'))
 
     // Background starfield (fixed to screen, not panning with world)
     const dimGfx = new Graphics();
@@ -81,7 +83,7 @@ function SuperclusterWorld() {
       dotGfx.fill({ color: BRIGHTNESS_TIERS[i].color, alpha: BRIGHTNESS_TIERS[i].alpha });
     }
 
-    const blurFilter = new BlurFilter({ strength: 0.25 });
+    const blurFilter = new BlurFilter({ strength: 0.05 });
     dotGfx.filters = [blurFilter];
     dotGfx.blendMode = 'screen';
 
@@ -104,7 +106,7 @@ function SuperclusterWorld() {
       elapsedSecs += ticker.deltaMS / 1000;
       dimGfx.alpha = 0.25 + Math.abs(Math.sin(elapsedSecs * 1.5)) * 0.55;
       brightGfx.alpha = 0.5 + Math.abs(Math.sin(elapsedSecs * 2.0 + 1.0)) * 0.5;
-      disp.update(elapsedSecs, 2 / camera.current.scale);
+      disp.update(elapsedSecs, Math.max(camera.current.scale * 10 - 5, 0));
     };
     Ticker.shared.add(tick);
 
@@ -140,7 +142,7 @@ function SuperclusterWorld() {
     }
     world.addChild(labelContainer);
 
-    const tick = () => { labelContainer.visible = camera.current.scale > 0.5; };
+    const tick = () => { labelContainer.visible = showAttractorLabels && camera.current.scale > 0.25; };
     Ticker.shared.add(tick);
 
     return () => {
@@ -150,7 +152,7 @@ function SuperclusterWorld() {
       titleGroup.destroy({ children: true });
       labelContainer.destroy({ children: true });
     };
-  }, [scData, isInitialised]);
+  }, [scData, isInitialised, showAttractorLabels]);
 
 
   useEffect(() => {
@@ -171,13 +173,26 @@ function SuperclusterWorld() {
       if (nearestDist > maxDist) return;
       nearest.visited = true;
       regenerateGalaxy(nearest.seed);
-      pushAddress(buildAddressComponent(nearest.name, nearest.x, nearest.y, 'galaxy'));
+
+      let nearestAttractorDist = Infinity;
+      let nearestAttractor = scData.attractors[0];
+      for (const att of scData.attractors) {
+        const d = Math.hypot(nearest.x - att.x, nearest.y - att.y);
+        if (d < nearestAttractorDist) { nearestAttractorDist = d; nearestAttractor = att; }
+      }
+      if (nearestAttractorDist <= SC_ATTRACTOR_LABEL_MAX_DIST) {
+        pushAddress(buildAddressComponent(nearestAttractor.name, nearestAttractor.x, nearestAttractor.y, nearestAttractor.z, 'attractor'));
+      } else {
+        removeAddressType('attractor');
+      }
+
+      pushAddress(buildAddressComponent(nearest.name, nearest.x, nearest.y, nearest.z, 'galaxy'));
       setView('galaxy');
     };
 
     stage.on('pointertap', onTap);
     return () => { stage.off('pointertap', onTap); };
-  }, [scData, app, isInitialised, regenerateGalaxy, setView, pushAddress]);
+  }, [scData, app, isInitialised, regenerateGalaxy, setView, pushAddress, removeAddressType]);
 
   return (
     <>

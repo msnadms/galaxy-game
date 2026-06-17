@@ -7,6 +7,8 @@ export function ConfigPanel() {
   const [expanded, setExpanded] = useState(false);
   const showHyperlanes = useUIStore((s) => s.showHyperlanes);
   const toggleHyperlanes = useUIStore((s) => s.toggleHyperlanes);
+  const showAttractorLabels = useUIStore((s) => s.showAttractorLabels);
+  const toggleAttractorLabels = useUIStore((s) => s.toggleAttractorLabels);
   const view = useUIStore((s) => s.view);
   const scSeed = useGameStore((s) => s.supercluster.seed);
   const regenerateSupercluster = useGameStore((s) => s.regenerateSupercluster);
@@ -43,6 +45,21 @@ export function ConfigPanel() {
                 onChange={toggleHyperlanes}
               />
               <div className={`config-toggle ${showHyperlanes ? 'on' : 'off'}`} aria-hidden="true">
+                <div className="config-toggle-thumb" />
+              </div>
+            </label>
+          )}
+
+          {view === 'supercluster' && (
+            <label className="config-row">
+              <span className="config-row-label">Attractor Labels</span>
+              <input
+                type="checkbox"
+                className="config-toggle-checkbox"
+                checked={showAttractorLabels}
+                onChange={toggleAttractorLabels}
+              />
+              <div className={`config-toggle ${showAttractorLabels ? 'on' : 'off'}`} aria-hidden="true">
                 <div className="config-toggle-thumb" />
               </div>
             </label>

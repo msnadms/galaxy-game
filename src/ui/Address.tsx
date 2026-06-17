@@ -1,18 +1,29 @@
 import { useUIStore } from "../store/uiStore"
 import './Address.css'
 
+const COORD_TYPES = new Set(['supercluster', 'galaxy', 'system']);
+
 export function Address() {
     const address = useUIStore((s) => s.address)
+
+    const coords = address
+        .filter(s => COORD_TYPES.has(s.type))
+        .map(s => { const z = Math.round(s.z); return `${Math.round(s.x)}.${Math.round(s.y)}${z !== 0 ? `.${z}` : ''}`; })
+        .join(':');
+
     return (
         <div className="address">
-            {address?.map((segment, i) => (
-                <span key={i}>
-                    {i > 0 && <span className="address-separator">›</span>}
-                    <span className={`address-segment${i === address.length - 1 ? ' address-segment--current' : ''}`}>
-                        {segment.name}
+            <div className="address-breadcrumb">
+                {address?.map((segment, i) => (
+                    <span key={i}>
+                        {i > 0 && <span className="address-separator">›</span>}
+                        <span className={`address-segment${i === address.length - 1 ? ' address-segment--current' : ''}`}>
+                            {segment.name}
+                        </span>
                     </span>
-                </span>
-            ))}
+                ))}
+            </div>
+            {coords && <div className="address-coords">{coords}</div>}
         </div>
     )
 }

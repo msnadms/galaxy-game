@@ -144,6 +144,10 @@ export const SC_CLUSTER_DOTS_PER_ATTRACTOR = 2000;
 // Standard deviation of the cluster Gaussian as a fraction of SC_WORLD_HALF.
 export const SC_CLUSTER_SIGMA = 0.12;
 
+// Max world-space distance from a dot to its nearest attractor for the attractor
+// name to appear in the address breadcrumb. ~1.4× SC_CLUSTER_SIGMA × SC_WORLD_HALF.
+export const SC_ATTRACTOR_LABEL_MAX_DIST = 300;
+
 // Number of galaxy dots placed along each filament curve.
 export const SC_FILAMENT_DOTS_PER_EDGE = 500;
 

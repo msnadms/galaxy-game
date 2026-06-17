@@ -22,6 +22,7 @@ export default function App() {
   const selectedId = useUIStore((s) => s.selectedSystemId);
   const selectSystem = useUIStore((s) => s.selectSystem);
   const popAddress = useUIStore((s) => s.popAddress);
+  const removeAddressType = useUIStore((s) => s.removeAddressType);
   const galaxySeed = useGameStore((s) => s.galaxy.seed);
   const galaxy = useGameStore((s) => s.galaxy);
   const system = selectedId !== null ? galaxy.systems[selectedId] : null;
@@ -31,7 +32,7 @@ export default function App() {
       {view === 'galaxy' ? <GalaxyStage /> : <Supercluster />}
       <div className="top-left">
         {view === 'galaxy' && (
-          <button className="back-btn" onClick={() => { if (selectedId !== null) { popAddress(); selectSystem(null); } popAddress(); setView('supercluster'); }}>
+          <button className="back-btn" onClick={() => { if (selectedId !== null) { popAddress(); selectSystem(null); } popAddress(); removeAddressType('attractor'); setView('supercluster'); }}>
             ← Supercluster
           </button>
         )}

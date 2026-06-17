@@ -52,7 +52,7 @@ function GalaxyWorld() {
     if (selectedSystemId !== null) popAddress();
     if (id !== null) {
       const system = galaxy.systems[id];
-      pushAddress(buildAddressComponent(system.name, system.x, system.y, 'system'))
+      pushAddress(buildAddressComponent(system.name, system.x, system.y, 0, 'system'))
     }
     selectSystem(id);
   };
@@ -211,7 +211,7 @@ function GalaxyWorld() {
         camera={camera}
         unitsPerWorldPx={radiusLy / GALAXY_RADIUS}
         unit="Light Years"
-        niceValues={[100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000]}
+        niceValues={[100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000]}
       />
     </>
   );

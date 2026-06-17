@@ -10,8 +10,33 @@ import {
 const CLUSTER_ROOTS = ['Vel', 'Kor', 'Dra', 'Lyx', 'Aur', 'Per', 'Cen', 'Vir', 'Com', 'For', 'Boo', 'Sag', 'Pav', 'Hydr', 'Phe'];
 const CLUSTER_ENDINGS = ['ara', 'eth', 'um', 'ius', 'is', 'ax', 'on', 'el', 'an', 'or'];
 const CLUSTER_SUFFIXES = [' Cluster', ' Wall', ' Void', ' Nexus', ' Complex', ' Cloud'];
-const SUPERCLUSTER_SUFFIXES = [' Supercluster', ' Filament', ' Sheet', ' Wall', ' Complex', ' Web'];
-const GALAXY_SUFFIXES = [' Galaxy', ' Dwarf', ' Spiral', ' System', ' Expanse', ' Domain'];
+const GALAXY_SUFFIXES = [' Galaxy', ' Spiral', ' System', ' Expanse', ' Domain'];
+
+const SC_NAME_ROOTS = [
+  'Virgo', 'Coma', 'Perseus', 'Pisces', 'Hydra', 'Centaurus', 'Boötes',
+  'Hercules', 'Fornax', 'Sculptor', 'Leo', 'Aquarius', 'Pavo', 'Ophiuchus',
+  'Eridanus', 'Phoenix', 'Libra', 'Cetus', 'Columba', 'Vela', 'Norma',
+  'Ara', 'Lupus', 'Corona', 'Caelum', 'Horologium', 'Microscopium',
+  'Telescopium', 'Tucana', 'Crater', 'Corvus', 'Capricornus', 'Lepus',
+];
+const SC_NAME_SUFFIXES = [
+  ' Supercluster', ' Supercluster', ' Supercluster Complex',
+  ' Great Wall', ' Wall', ' Filament', ' Sheet', ' Attractor Region',
+];
+
+function makeSupercusterName(rng: Rng): string {
+  const primaryIdx = Math.floor(rng() * SC_NAME_ROOTS.length);
+  const primary = SC_NAME_ROOTS[primaryIdx];
+  const isCompound = rng() < 0.35;
+  let base = primary;
+  if (isCompound) {
+    const secondaryRaw = Math.floor(rng() * (SC_NAME_ROOTS.length - 1));
+    const secondary = SC_NAME_ROOTS[secondaryRaw >= primaryIdx ? secondaryRaw + 1 : secondaryRaw];
+    base = `${primary}-${secondary}`;
+  }
+  const suffix = SC_NAME_SUFFIXES[Math.floor(rng() * SC_NAME_SUFFIXES.length)];
+  return `${base}${suffix}`;
+}
 
 export function generateGalaxyName(seed: number): string {
   const rng = createRng(seed);
@@ -36,10 +61,7 @@ function todaySeed(): number {
 export function generateSupercluster(seed: number = Date.now()): SuperclusterData {
   const rng = createRng(seed);
 
-  const scRoot   = CLUSTER_ROOTS[Math.floor(rng() * CLUSTER_ROOTS.length)];
-  const scEnding = CLUSTER_ENDINGS[Math.floor(rng() * CLUSTER_ENDINGS.length)];
-  const scSuffix = SUPERCLUSTER_SUFFIXES[Math.floor(rng() * SUPERCLUSTER_SUFFIXES.length)];
-  const name = `${scRoot}${scEnding}${scSuffix}`;
+  const name = makeSupercusterName(rng);
 
   const attractors: SuperclusterAttractor[] = [];
   for (let i = 0; i < SC_ATTRACTOR_COUNT; i++) {
@@ -62,7 +84,8 @@ export function generateSupercluster(seed: number = Date.now()): SuperclusterDat
       }
     }
 
-    attractors.push({ x: bestX, y: bestY, strength: 0.5 + rng() * 0.5, name: makeClusterName(rng) });
+    const z = (rng() * 2 - 1) * SC_WORLD_HALF;
+    attractors.push({ x: bestX, y: bestY, z, strength: 0.5 + rng() * 0.5, name: makeClusterName(rng) });
   }
 
   const positions: [number, number][] = attractors.map(a => [a.x, a.y]);
@@ -98,11 +121,15 @@ export function generateSupercluster(seed: number = Date.now()): SuperclusterDat
       const dx = mag * Math.cos(2 * Math.PI * u2);
       const dy = mag * Math.sin(2 * Math.PI * u2);
 
+      const u3 = Math.max(rng(), 1e-10);
+      const u4 = rng();
+      const dz = sigma * Math.sqrt(-2 * Math.log(u3)) * Math.cos(2 * Math.PI * u4);
+
       const radialFade = Math.exp(-mag / (sigma * 1.2));
       const brightness = (0.5 + rng() * 0.5) * radialFade;
       if (brightness < 0.02) { continue; }
       const dotSeed = (seed ^ (dotIndex++ * 2654435761)) >>> 0;
-      dots.push({ x: att.x + dx, y: att.y + dy, brightness, seed: dotSeed, name: generateGalaxyName(dotSeed), visited: false });
+      dots.push({ x: att.x + dx, y: att.y + dy, z: att.z + dz, brightness, seed: dotSeed, name: generateGalaxyName(dotSeed), visited: false });
     }
   }
 
@@ -115,7 +142,7 @@ export function generateSupercluster(seed: number = Date.now()): SuperclusterDat
     const dy = B.y - A.y;
     const len = Math.hypot(dx, dy);
 
-    const curvature = (rng() - 0.5) * 1.5 * len;
+    const curvature = (rng() - 0.5) * 1.2 * len;
     const cx = (A.x + B.x) / 2 + (-dy / len) * curvature;
     const cy = (A.y + B.y) / 2 + ( dx / len) * curvature;
 
@@ -137,7 +164,9 @@ export function generateSupercluster(seed: number = Date.now()): SuperclusterDat
       const perpSigma = filamentScatterW / (centerFrac * centerFrac + 0.1);
       const u1 = Math.max(rng(), 1e-10);
       const u2 = rng();
-      const scatter = perpSigma * Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+      const rawMag = Math.sqrt(-2 * Math.log(u1));
+      const scatter = perpSigma * rawMag * Math.cos(2 * Math.PI * u2);
+      const zScatter = filamentScatterW * 0.5 * rawMag * Math.sin(2 * Math.PI * u2);
 
       const perpFade = Math.exp(-(scatter * scatter) / (5 * perpSigma * perpSigma));
 
@@ -147,6 +176,7 @@ export function generateSupercluster(seed: number = Date.now()): SuperclusterDat
       dots.push({
         x: bx + perpX * scatter,
         y: by + perpY * scatter,
+        z: A.z + t * (B.z - A.z) + zScatter,
         brightness,
         seed: dotSeed,
         name: generateGalaxyName(dotSeed),
