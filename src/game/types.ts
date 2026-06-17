@@ -20,6 +20,7 @@ export interface StarSystem {
   size: number;
   arm: number | null;
   seed: number;
+  visited: boolean;
 }
 
 export interface Hyperlane {

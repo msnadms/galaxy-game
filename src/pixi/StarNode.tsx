@@ -11,7 +11,8 @@ export const StarNode = memo(function StarNode({
   system: StarSystem;
   onSelect: (id: number | null) => void;
 }) {
-  const isSelected = useGameStore((s) => s.system?.id === system.id);
+  const isVisited = useGameStore((s) => s.galaxy.systems[system.id]?.visited ?? false);
+  const markSystemVisited = useGameStore((s) => s.markSystemVisited);
 
   const glowTexture = useMemo(
     () => createStarTexture(system.color, system.size),
@@ -23,15 +24,20 @@ export const StarNode = memo(function StarNode({
   const drawRing = useCallback(
     (gfx: Graphics) => {
       gfx.clear();
-      if (isSelected) {
+      if (isVisited) {
         gfx.circle(0, 0, system.size + 7);
         gfx.stroke({ color: 0xffffff, width: 1.5, alpha: 0.75 });
         gfx.circle(0, 0, system.size + 11);
         gfx.stroke({ color: 0xffffff, width: 0.5, alpha: 0.25 });
       }
     },
-    [system.size, isSelected],
+    [system.size, isVisited],
   );
+
+  const handleClick = useCallback(() => {
+    markSystemVisited(system.id);
+    onSelect(system.id);
+  }, [system.id, markSystemVisited, onSelect]);
 
   return (
     <pixiContainer
@@ -39,7 +45,7 @@ export const StarNode = memo(function StarNode({
       y={system.y}
       eventMode="static"
       cursor="pointer"
-      onClick={() => onSelect(system.id)}
+      onClick={handleClick}
     >
       <pixiSprite texture={glowTexture} anchor={0.5} scale={0.25} />
       <pixiGraphics draw={drawRing} eventMode="none" />
