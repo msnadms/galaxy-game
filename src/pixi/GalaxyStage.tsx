@@ -1,10 +1,11 @@
 import { Application, extend, useApplication } from '@pixi/react';
 import { Container, Graphics, Ticker, Sprite, BlurFilter } from 'pixi.js';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useUIStore } from '../store/uiStore';
 import {
   GALAXY_RADIUS,
+  GALAXY_RADIUS_LY,
   NEBULA_STEPS,
   NEBULA_SKIP_CHANCE,
   NEBULA_PARTICLES_PER_STEP,
@@ -23,6 +24,8 @@ import { createRng } from '../game/galaxyGen';
 import { HyperlaneLayer } from './HyperlaneLayer';
 import { StarNode } from './StarNode';
 import { useCamera } from './useCamera';
+import { ScaleBar } from './ScaleBar';
+import { buildAddressComponent } from '../game/types';
 
 extend({ Container, Graphics, Sprite });
 
@@ -39,11 +42,29 @@ function GalaxyWorld() {
 
   const galaxy = useGameStore((s) => s.galaxy);
   const selectSystem = useUIStore((s) => s.selectSystem);
+  const selectedSystemId = useUIStore((s) => s.selectedSystemId);
+  const pushAddress = useUIStore((s) => s.pushAddress);
+  const popAddress = useUIStore((s) => s.popAddress);
   const showHyperlanes = useUIStore((s) => s.showHyperlanes);
   const config = galaxy.config;
 
+  const handleSelectSystem = (id: number | null) => {
+    if (selectedSystemId !== null) popAddress();
+    if (id !== null) {
+      const system = galaxy.systems[id];
+      pushAddress(buildAddressComponent(system.name, system.x, system.y, 'system'))
+    }
+    selectSystem(id);
+  };
+
   const worldRef = useRef<Container>(null);
-  const { camera, isReady } = useCamera(worldRef, CAMERA_INITIAL_SCALE, () => selectSystem(null));
+  const { camera, isReady } = useCamera(worldRef, CAMERA_INITIAL_SCALE, () => handleSelectSystem(null));
+
+  const radiusLy = useMemo(() => {
+    const rng = createRng(galaxy.seed);
+    const sizeScale = Math.floor(rng() * 7) - 3;
+    return Math.round(GALAXY_RADIUS_LY * Math.pow(2, sizeScale));
+  }, [galaxy.seed]);
 
   useEffect(() => {
     if (!isInitialised || !worldRef.current) return;
@@ -179,11 +200,19 @@ function GalaxyWorld() {
   }, [galaxy, app, isInitialised]);
 
   return (
-    <pixiContainer ref={worldRef} visible={isReady}>
-      {showHyperlanes && <HyperlaneLayer galaxy={galaxy} />}
-      {galaxy.systems.map((system) => (
-        <StarNode key={system.id} system={system} onSelect={selectSystem} />
-      ))}
-    </pixiContainer>
+    <>
+      <pixiContainer ref={worldRef} visible={isReady}>
+        {showHyperlanes && <HyperlaneLayer galaxy={galaxy} />}
+        {galaxy.systems.map((system) => (
+          <StarNode key={system.id} system={system} onSelect={handleSelectSystem} />
+        ))}
+      </pixiContainer>
+      <ScaleBar
+        camera={camera}
+        unitsPerWorldPx={radiusLy / GALAXY_RADIUS}
+        unit="Light Years"
+        niceValues={[100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000]}
+      />
+    </>
   );
 }

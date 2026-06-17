@@ -6,6 +6,7 @@ import { useGameStore } from './store/gameStore';
 import { generateGalaxyName } from './game/superclusters';
 import type { StarType } from './game/types';
 import './App.css';
+import { Address } from './ui/Address';
 
 const STAR_TYPE_LABELS: Record<StarType, string> = {
   G: 'G-class (Yellow Dwarf)',
@@ -19,6 +20,8 @@ export default function App() {
   const view = useUIStore((s) => s.view);
   const setView = useUIStore((s) => s.setView);
   const selectedId = useUIStore((s) => s.selectedSystemId);
+  const selectSystem = useUIStore((s) => s.selectSystem);
+  const popAddress = useUIStore((s) => s.popAddress);
   const galaxySeed = useGameStore((s) => s.galaxy.seed);
   const galaxy = useGameStore((s) => s.galaxy);
   const system = selectedId !== null ? galaxy.systems[selectedId] : null;
@@ -28,12 +31,13 @@ export default function App() {
       {view === 'galaxy' ? <GalaxyStage /> : <Supercluster />}
       <div className="top-left">
         {view === 'galaxy' && (
-          <button className="back-btn" onClick={() => setView('supercluster')}>
+          <button className="back-btn" onClick={() => { if (selectedId !== null) { popAddress(); selectSystem(null); } popAddress(); setView('supercluster'); }}>
             ← Supercluster
           </button>
         )}
         <ConfigPanel />
       </div>
+      <Address />
       {view === 'galaxy' && (
         <div className="galaxy-title">{generateGalaxyName(galaxySeed)}</div>
       )}

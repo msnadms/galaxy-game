@@ -1,0 +1,28 @@
+.address {
+  position: absolute;
+  top: 22px;
+  left: 196px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  user-select: none;
+  pointer-events: none;
+}
+
+.address-segment {
+  color: #4a6a84;
+}
+
+.address-segment--current {
+  color: #99bbdd;
+}
+
+.address-separator {
+  color: #2a4a60;
+  font-size: 12px;
+  padding: 0 3px;
+}

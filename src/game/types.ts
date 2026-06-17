@@ -63,3 +63,16 @@ export interface SuperclusterData {
   backgroundStars: BackgroundStar[];
   seed: number;
 }
+
+type AddressComponentType = 'universe' | 'supercluster' | 'galaxy' | 'system'
+
+export interface AddressComponent {
+  name: string;
+  x: number;
+  y: number;
+  type: AddressComponentType
+}
+
+export function buildAddressComponent(name: string, x: number, y: number, type: AddressComponentType) {
+  return { name, x, y, type } as AddressComponent
+}

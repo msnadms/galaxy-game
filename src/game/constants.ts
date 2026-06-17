@@ -3,6 +3,8 @@
 // Outer radius of the galaxy in world-space pixels.
 // Increasing this makes the galaxy larger and stars more spread out.
 export const GALAXY_RADIUS = 720;
+// Real-world scale: how many light years GALAXY_RADIUS represents.
+export const GALAXY_RADIUS_LY = 50000;
 
 // How many radians the spiral rotates from centre to edge.
 // Higher = tighter/more wound spiral. Used in both star gen and nebula placement.
@@ -128,20 +130,22 @@ export const CORE_ELLIPSE_Y = 110;
 // ─── Supercluster generation ─────────────────────────────────────────────────
 
 // Half-width/height of the attractor placement area in world-space units.
-export const SC_WORLD_HALF = 1200;
+export const SC_WORLD_HALF = 1800;
+// Real-world scale: how many million light years SC_WORLD_HALF represents.
+export const SC_WORLD_HALF_MLY = 450;
 
 // How many galaxy-cluster "attractors" (dense nodes) to place in the supercluster.
-export const SC_ATTRACTOR_COUNT = 8;
+export const SC_ATTRACTOR_COUNT = 12;
 
 // Base number of galaxy dots placed in the Gaussian cluster around each attractor.
 // Scaled by the attractor's strength, so stronger attractors get more dots.
-export const SC_CLUSTER_DOTS_PER_ATTRACTOR = 1200;
+export const SC_CLUSTER_DOTS_PER_ATTRACTOR = 2000;
 
 // Standard deviation of the cluster Gaussian as a fraction of SC_WORLD_HALF.
-export const SC_CLUSTER_SIGMA = 0.16;
+export const SC_CLUSTER_SIGMA = 0.12;
 
 // Number of galaxy dots placed along each filament curve.
-export const SC_FILAMENT_DOTS_PER_EDGE = 250;
+export const SC_FILAMENT_DOTS_PER_EDGE = 500;
 
 // Base scatter width for filament dots as a fraction of SC_WORLD_HALF.
 export const SC_FILAMENT_SCATTER = 0.025;

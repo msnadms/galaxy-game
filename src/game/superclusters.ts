@@ -28,13 +28,12 @@ function makeClusterName(rng: Rng): string {
   return `${root}${ending}${suffix}`;
 }
 
-
 function todaySeed(): number {
   const d = new Date();
   return d.getDate() * 1_000_000 + (d.getMonth() + 1) * 10_000 + d.getFullYear();
 }
 
-export function generateSupercluster(seed: number = todaySeed()): SuperclusterData {
+export function generateSupercluster(seed: number = Date.now()): SuperclusterData {
   const rng = createRng(seed);
 
   const scRoot   = CLUSTER_ROOTS[Math.floor(rng() * CLUSTER_ROOTS.length)];
@@ -116,7 +115,7 @@ export function generateSupercluster(seed: number = todaySeed()): SuperclusterDa
     const dy = B.y - A.y;
     const len = Math.hypot(dx, dy);
 
-    const curvature = (rng() - 0.5) * 2 * len;
+    const curvature = (rng() - 0.5) * 1.5 * len;
     const cx = (A.x + B.x) / 2 + (-dy / len) * curvature;
     const cy = (A.y + B.y) / 2 + ( dx / len) * curvature;
 

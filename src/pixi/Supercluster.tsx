@@ -1,14 +1,15 @@
 import { Application, extend, useApplication } from '@pixi/react';
-import { Container, Graphics, Ticker, BlurFilter, Text } from 'pixi.js';
+import { Container, Graphics, Ticker, BlurFilter } from 'pixi.js';
 import { useEffect, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useUIStore } from '../store/uiStore';
-import type { SuperclusterDot } from '../game/types';
+import { buildAddressComponent, type SuperclusterDot } from '../game/types';
 import { useCamera } from './useCamera';
 import { createDisplacementSetup } from './textures';
-import { SC_CAMERA_INITIAL_SCALE } from '../game/constants';
-
-extend({ Container, Graphics });
+import { SC_CAMERA_INITIAL_SCALE, SC_WORLD_HALF, SC_WORLD_HALF_MLY } from '../game/constants';
+import { ScaleBar } from './ScaleBar';
+import { createRng } from '../game/galaxyGen';
+import { createPointerLabel } from './labels';
 
 const BRIGHTNESS_TIERS = [
   { min: 0.80, radius: 3.5, color: 0xffee00, alpha: 1.00 },
@@ -20,7 +21,7 @@ const BRIGHTNESS_TIERS = [
 
 export function Supercluster() {
   return (
-    <Application resizeTo={window} background={0x050810}>
+    <Application resizeTo={window} background={0x050810} antialias>
       <SuperclusterWorld />
     </Application>
   );
@@ -32,6 +33,7 @@ function SuperclusterWorld() {
   const scData = useGameStore((s) => s.supercluster);
   const regenerateGalaxy = useGameStore((s) => s.regenerateGalaxy);
   const setView = useUIStore((s) => s.setView);
+  const pushAddress = useUIStore((s) => s.pushAddress);
 
   const worldRef = useRef<Container>(null);
   const { camera, isReady } = useCamera(worldRef, SC_CAMERA_INITIAL_SCALE);
@@ -41,6 +43,9 @@ function SuperclusterWorld() {
     const world = worldRef.current;
     const stage = app.stage;
     const renderer = app.renderer;
+    const rng = createRng(scData.seed);
+    const [x, y] = [rng() * 1_000_000_000, rng() * 1_000_000_000];
+    pushAddress(buildAddressComponent(scData.name, x, y, 'supercluster'))
 
     // Background starfield (fixed to screen, not panning with world)
     const dimGfx = new Graphics();
@@ -86,7 +91,7 @@ function SuperclusterWorld() {
     for (const d of visitedDots) visitedGfx.circle(d.x, d.y, 11);
     visitedGfx.stroke({ color: 0xffffff, width: 0.5, alpha: 0.25 });
 
-    const disp = createDisplacementSetup(scContainer, 5);
+    const disp = createDisplacementSetup(scContainer, 8);
 
     scContainer.addChild(dotGfx);
     scContainer.addChild(visitedGfx);
@@ -99,7 +104,7 @@ function SuperclusterWorld() {
       elapsedSecs += ticker.deltaMS / 1000;
       dimGfx.alpha = 0.25 + Math.abs(Math.sin(elapsedSecs * 1.5)) * 0.55;
       brightGfx.alpha = 0.5 + Math.abs(Math.sin(elapsedSecs * 2.0 + 1.0)) * 0.5;
-      disp.update(elapsedSecs, 1.5 / camera.current.scale);
+      disp.update(elapsedSecs, 2 / camera.current.scale);
     };
     Ticker.shared.add(tick);
 
@@ -119,23 +124,19 @@ function SuperclusterWorld() {
     if (!isInitialised || !worldRef.current) return;
     const world = worldRef.current;
 
-    const titleLabel = new Text({
-      text: scData.name,
-      style: { fontFamily: 'sans-serif', fontSize: 90, fill: 0xddeeff, align: 'center' },
+    const titleGroup = createPointerLabel(scData.name, 90, {
+      lineLength: 1600,
+      dotRadius: 8,
+      alpha: 0.8,
     });
-    titleLabel.anchor.set(0.5, 1.0);
-    titleLabel.position.set(0, -1400);
-    world.addChild(titleLabel);
+    titleGroup.position.set(0, 0);
+    world.addChild(titleGroup);
 
     const labelContainer = new Container();
     for (const att of scData.attractors) {
-      const label = new Text({
-        text: att.name,
-        style: { fontFamily: 'sans-serif', fontSize: 40, fill: 0xaabbff, align: 'center' },
-      });
-      label.anchor.set(0.5, 1.0);
-      label.position.set(att.x, att.y - 150);
-      labelContainer.addChild(label);
+      const group = createPointerLabel(att.name, 40, { lineLength: 120 });
+      group.position.set(att.x, att.y);
+      labelContainer.addChild(group);
     }
     world.addChild(labelContainer);
 
@@ -144,12 +145,13 @@ function SuperclusterWorld() {
 
     return () => {
       Ticker.shared.remove(tick);
-      world.removeChild(titleLabel);
+      world.removeChild(titleGroup);
       world.removeChild(labelContainer);
-      titleLabel.destroy();
+      titleGroup.destroy({ children: true });
       labelContainer.destroy({ children: true });
     };
   }, [scData, isInitialised]);
+
 
   useEffect(() => {
     if (!isInitialised || !worldRef.current) return;
@@ -169,12 +171,23 @@ function SuperclusterWorld() {
       if (nearestDist > maxDist) return;
       nearest.visited = true;
       regenerateGalaxy(nearest.seed);
+      pushAddress(buildAddressComponent(nearest.name, nearest.x, nearest.y, 'galaxy'));
       setView('galaxy');
     };
 
     stage.on('pointertap', onTap);
     return () => { stage.off('pointertap', onTap); };
-  }, [scData, app, isInitialised, regenerateGalaxy, setView]);
+  }, [scData, app, isInitialised, regenerateGalaxy, setView, pushAddress]);
 
-  return <pixiContainer ref={worldRef} visible={isReady} />;
+  return (
+    <>
+      <pixiContainer ref={worldRef} visible={isReady} />
+      <ScaleBar
+        camera={camera}
+        unitsPerWorldPx={SC_WORLD_HALF_MLY / SC_WORLD_HALF}
+        unit="Million Light Years"
+        niceValues={[5, 10, 25, 50, 100, 150, 200, 300, 500]}
+      />
+    </>
+  );
 }
