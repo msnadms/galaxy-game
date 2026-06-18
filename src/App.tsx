@@ -7,8 +7,11 @@ import { generateGalaxyName } from './game/superclusters';
 import './App.css';
 import { Address } from './ui/Address';
 import { SolarSystemStage } from './pixi/SolarSystem';
+import { AuthButton } from './ui/AuthButton';
+import { useSettingsPersist } from './hooks/useSettingsPersist';
 
 export default function App() {
+  useSettingsPersist();
   const view = useUIStore((s) => s.view);
   const setView = useUIStore((s) => s.setView);
   const popAddress = useUIStore((s) => s.popAddress);
@@ -33,6 +36,9 @@ export default function App() {
           </button>
         )}
         <ConfigPanel />
+      </div>
+      <div className="top-right">
+        <AuthButton />
       </div>
       <Address />
       {view === 'galaxy' && (

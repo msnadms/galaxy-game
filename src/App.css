@@ -50,6 +50,13 @@
   text-shadow: 0 0 20px rgba(100, 160, 255, 0.4);
 }
 
+.top-right {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
+}
+
 .system-panel {
   position: absolute;
   top: 20px;

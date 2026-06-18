@@ -1,0 +1,39 @@
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { type User } from 'firebase/auth';
+import { db } from './firebase';
+
+export interface UserSettings {
+  showHyperlanes: boolean;
+  showOrbitRings: boolean;
+  showAttractorLabels: boolean;
+}
+
+const defaultSettings: UserSettings = {
+  showHyperlanes: false,
+  showOrbitRings: false,
+  showAttractorLabels: true,
+};
+
+export async function initUserDoc(user: User): Promise<UserSettings> {
+  const ref = doc(db, 'users', user.uid);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    await setDoc(ref, {
+      displayName: user.displayName,
+      email: user.email,
+      photoURL: user.photoURL,
+      createdAt: serverTimestamp(),
+      settings: defaultSettings,
+    });
+    return defaultSettings;
+  }
+
+  const data = snap.data();
+  return { ...defaultSettings, ...data.settings } as UserSettings;
+}
+
+export async function saveUserSettings(uid: string, settings: UserSettings): Promise<void> {
+  const ref = doc(db, 'users', uid);
+  await updateDoc(ref, { settings });
+}
