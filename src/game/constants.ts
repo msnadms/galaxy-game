@@ -165,6 +165,7 @@ export const SC_CAMERA_INITIAL_SCALE = 0.55;
 
 // Minimum and maximum allowed zoom levels.
 export const CAMERA_MIN_SCALE = 0.12;
+export const SYSTEM_CAMERA_MIN_SCALE = 0.03;
 export const CAMERA_MAX_SCALE = 6;
 
 // Zoom multiplier applied per scroll step (12% per tick).

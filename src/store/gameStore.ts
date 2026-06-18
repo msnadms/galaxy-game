@@ -36,7 +36,7 @@ export const useGameStore = create<GameState>((set) => ({
       system: null,
     };
   }),
-  regenerateSupercluster: (seed) => set({ supercluster: generateSupercluster(seed) }),
+  regenerateSupercluster: (seed) => set({ supercluster: generateSupercluster(seed), visitedSystemsByGalaxySeed: {} }),
   setSystem: (system) => set({ system }),
   markDotVisited: (seed) => set((state) => ({
     supercluster: {

@@ -12,6 +12,7 @@ export function useCamera(
   worldRef: React.RefObject<Container | null>,
   initialScale: number,
   onStageTap?: () => void,
+  minScale: number = CAMERA_MIN_SCALE,
 ) {
   const { app, isInitialised } = useApplication();
   const camera = useRef({ x: 0, y: 0, scale: initialScale });
@@ -76,7 +77,7 @@ export function useCamera(
       const mouseY = event.clientY;
       const worldX = (mouseX - camera.current.x) / camera.current.scale;
       const worldY = (mouseY - camera.current.y) / camera.current.scale;
-      camera.current.scale = Math.max(CAMERA_MIN_SCALE, Math.min(CAMERA_MAX_SCALE, camera.current.scale * zoomFactor));
+      camera.current.scale = Math.max(minScale, Math.min(CAMERA_MAX_SCALE, camera.current.scale * zoomFactor));
       camera.current.x = mouseX - worldX * camera.current.scale;
       camera.current.y = mouseY - worldY * camera.current.scale;
       worldRef.current.position.set(camera.current.x, camera.current.y);

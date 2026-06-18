@@ -165,3 +165,60 @@ export function createStarTexture(color: number, size: number): Texture {
 
   return Texture.from(canvas);
 }
+
+export function createGasGiantTexture(baseColor: number, rng: () => number, isIce = false): Texture {
+  const SIZE = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = SIZE;
+  canvas.height = SIZE;
+  const ctx = canvas.getContext('2d')!;
+
+  const r0 = (baseColor >> 16) & 0xff;
+  const g0 = (baseColor >> 8)  & 0xff;
+  const b0 =  baseColor        & 0xff;
+
+  ctx.beginPath();
+  ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2, 0, Math.PI * 2);
+  ctx.clip();
+
+  ctx.fillStyle = `rgb(${r0},${g0},${b0})`;
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  const numBands = isIce ? Math.floor(rng() * 3) + 4 : Math.floor(rng() * 4) + 6;
+  const spread = isIce ? 35 : 55;
+  let y = 0;
+  let prevR = r0, prevG = g0, prevB = b0;
+  for (let i = 0; i < numBands; i++) {
+    const bandH = Math.ceil(SIZE * (0.6 + rng() * 0.8) / numBands);
+    const brightness = Math.round((rng() - 0.5) * spread);
+    const cr = Math.min(255, Math.max(0, r0 + brightness));
+    const cg = Math.min(255, Math.max(0, g0 + brightness));
+    const cb = Math.min(255, Math.max(0, b0 + Math.round((rng() - 0.5) * spread * (isIce ? 0.8 : 0.5))));
+    const grad = ctx.createLinearGradient(0, y, 0, y + bandH);
+    grad.addColorStop(0,    `rgb(${prevR},${prevG},${prevB})`);
+    grad.addColorStop(0.25, `rgb(${cr},${cg},${cb})`);
+    grad.addColorStop(1,    `rgb(${cr},${cg},${cb})`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, y, SIZE, bandH);
+    prevR = cr; prevG = cg; prevB = cb;
+    y += bandH;
+  }
+
+  // Sphere-edge shadow
+  const shadow = ctx.createRadialGradient(SIZE/2, SIZE/2, SIZE*0.25, SIZE/2, SIZE/2, SIZE/2);
+  shadow.addColorStop(0,   'rgba(0,0,0,0)');
+  shadow.addColorStop(0.6, 'rgba(0,0,0,0.15)');
+  shadow.addColorStop(1,   'rgba(0,0,0,0.72)');
+  ctx.fillStyle = shadow;
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  // Specular highlight
+  const hi = ctx.createRadialGradient(SIZE*0.33, SIZE*0.28, 0, SIZE*0.33, SIZE*0.28, SIZE*0.32);
+  hi.addColorStop(0,   'rgba(255,255,255,0.45)');
+  hi.addColorStop(0.5, 'rgba(255,255,255,0.12)');
+  hi.addColorStop(1,   'rgba(255,255,255,0)');
+  ctx.fillStyle = hi;
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  return Texture.from(canvas);
+}
