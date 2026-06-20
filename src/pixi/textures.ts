@@ -167,24 +167,258 @@ export function createStarTexture(color: number, size: number): Texture {
   return Texture.from(canvas);
 }
 
-export function createGasGiantTexture(baseColor: number, seed: number, isIce = false): Texture {
-  const rng = createRng(seed);
-  const SIZE = 256;
+function makeCircleCanvas(size: number, baseColor: number) {
   const canvas = document.createElement('canvas');
-  canvas.width = SIZE;
-  canvas.height = SIZE;
+  canvas.width = size;
+  canvas.height = size;
   const ctx = canvas.getContext('2d')!;
-
   const r0 = (baseColor >> 16) & 0xff;
   const g0 = (baseColor >> 8)  & 0xff;
   const b0 =  baseColor        & 0xff;
-
   ctx.beginPath();
-  ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2, 0, Math.PI * 2);
+  ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
   ctx.clip();
-
   ctx.fillStyle = `rgb(${r0},${g0},${b0})`;
+  ctx.fillRect(0, 0, size, size);
+  return { canvas, ctx, r0, g0, b0 };
+}
+
+type ShadowOpts   = { inner: number; stop: number; midA: number; outerA: number };
+type SpecularOpts = { ox: number; oy: number; r: number; a: number };
+
+function applySphereShading(ctx: CanvasRenderingContext2D, SIZE: number, sh: ShadowOpts, sp: SpecularOpts) {
+  const shadow = ctx.createRadialGradient(SIZE/2, SIZE/2, SIZE*sh.inner, SIZE/2, SIZE/2, SIZE/2);
+  shadow.addColorStop(0,       'rgba(0,0,0,0)');
+  shadow.addColorStop(sh.stop, `rgba(0,0,0,${sh.midA})`);
+  shadow.addColorStop(1,       `rgba(0,0,0,${sh.outerA})`);
+  ctx.fillStyle = shadow;
   ctx.fillRect(0, 0, SIZE, SIZE);
+
+  const hi = ctx.createRadialGradient(SIZE*sp.ox, SIZE*sp.oy, 0, SIZE*sp.ox, SIZE*sp.oy, SIZE*sp.r);
+  hi.addColorStop(0,   `rgba(255,255,255,${sp.a})`);
+  hi.addColorStop(0.5, `rgba(255,255,255,${+(sp.a * 0.22).toFixed(2)})`);
+  hi.addColorStop(1,   'rgba(255,255,255,0)');
+  ctx.fillStyle = hi;
+  ctx.fillRect(0, 0, SIZE, SIZE);
+}
+
+export function createRockyPlanetTexture(baseColor: number, seed: number): Texture {
+  const rng = createRng(seed);
+  const SIZE = 256;
+  const { canvas, ctx, r0, g0, b0 } = makeCircleCanvas(SIZE, baseColor);
+
+  // Large terrain patches
+  const numPatches = Math.floor(rng() * 8) + 10;
+  for (let i = 0; i < numPatches; i++) {
+    const cx  = rng() * SIZE;
+    const cy  = rng() * SIZE;
+    const rad = 15 + rng() * 65;
+    const bri = Math.round((rng() - 0.5) * 80);
+    const cr  = Math.min(255, Math.max(0, r0 + bri));
+    const cg  = Math.min(255, Math.max(0, g0 + bri));
+    const cb  = Math.min(255, Math.max(0, b0 + Math.round((rng() - 0.5) * 30)));
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+    grad.addColorStop(0, `rgba(${cr},${cg},${cb},${0.3 + rng() * 0.45})`);
+    grad.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, SIZE, SIZE);
+  }
+
+  // Small craters
+  const numCraters = Math.floor(rng() * 6) + 5;
+  for (let i = 0; i < numCraters; i++) {
+    const cx  = rng() * SIZE;
+    const cy  = rng() * SIZE;
+    const rad = 2 + rng() * 9;
+    const cr  = Math.max(0, r0 - 35);
+    const cg  = Math.max(0, g0 - 35);
+    const cb  = Math.max(0, b0 - 35);
+    ctx.beginPath();
+    ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${cr},${cg},${cb},0.55)`;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${Math.min(255, r0 + 40)},${Math.min(255, g0 + 40)},${Math.min(255, b0 + 40)},0.4)`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // Lava glints — desaturated warm hot spots
+  const numLava = Math.floor(rng() * 3) + 1;
+  for (let i = 0; i < numLava; i++) {
+    const cx  = rng() * SIZE;
+    const cy  = rng() * SIZE;
+    const rad = 3 + rng() * 14;
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+    grad.addColorStop(0,    `rgba(200,160,80,0.38)`);
+    grad.addColorStop(0.45, `rgba(175,100,45,0.2)`);
+    grad.addColorStop(1,    `rgba(140,60,20,0)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, SIZE, SIZE);
+  }
+
+  applySphereShading(ctx, SIZE,
+    { inner: 0.25, stop: 0.6, midA: 0.2,  outerA: 0.78 },
+    { ox: 0.33,   oy: 0.28,  r: 0.28,    a: 0.38 },
+  );
+  return Texture.from(canvas);
+}
+
+export function createHabitablePlanetTexture(baseColor: number, seed: number): Texture {
+  const rng = createRng(seed);
+  const SIZE = 256;
+  const { canvas, ctx, r0, g0, b0 } = makeCircleCanvas(SIZE, baseColor);
+
+  // Ocean patches — dark blue seas
+  const OCEAN_PALETTES = [
+    [28, 60, 110], [35, 72, 130], [22, 55, 100],
+    [40, 80, 140], [30, 65, 120],
+  ];
+  const numOceans = Math.floor(rng() * 3) + 2;
+  for (let i = 0; i < numOceans; i++) {
+    const cx    = rng() * SIZE;
+    const cy    = SIZE * 0.1 + rng() * SIZE * 0.8;
+    const rx    = 22 + rng() * 55;
+    const ry    = 15 + rng() * 38;
+    const angle = rng() * Math.PI * 2;
+    const [cr, cg, cb] = OCEAN_PALETTES[Math.floor(rng() * OCEAN_PALETTES.length)];
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+    const numBlobs = Math.floor(rng() * 3) + 2;
+    ctx.beginPath();
+    for (let b = 0; b < numBlobs; b++) {
+      const bx = (rng() - 0.5) * rx * 0.8;
+      const by = (rng() - 0.5) * ry * 0.8;
+      const br = rx * (0.3 + rng() * 0.6);
+      ctx.moveTo(bx + br, by);
+      ctx.arc(bx, by, br, 0, Math.PI * 2);
+    }
+    ctx.fillStyle = `rgba(${cr},${cg},${cb},0.72)`;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Continents — overlapping irregular blobs (darker greens)
+  const CONTINENT_PALETTES = [
+    [52, 78, 30],  [65, 90, 22],  [45, 72, 28],
+    [40, 62, 32],  [58, 85, 25],  [55, 75, 40],
+  ];
+  const numContinents = Math.floor(rng() * 4) + 3;
+  for (let i = 0; i < numContinents; i++) {
+    const cx    = rng() * SIZE;
+    const cy    = SIZE * 0.1 + rng() * SIZE * 0.8;
+    const rx    = 28 + rng() * 58;
+    const ry    = 18 + rng() * 40;
+    const angle = rng() * Math.PI * 2;
+    const [cr, cg, cb] = CONTINENT_PALETTES[Math.floor(rng() * CONTINENT_PALETTES.length)];
+    const alpha = 0.72 + rng() * 0.26;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+    const numBlobs = Math.floor(rng() * 4) + 3;
+    ctx.beginPath();
+    for (let b = 0; b < numBlobs; b++) {
+      const bx = (rng() - 0.5) * rx * 0.9;
+      const by = (rng() - 0.5) * ry * 0.9;
+      const br = rx * (0.35 + rng() * 0.65);
+      ctx.moveTo(bx + br, by);
+      ctx.arc(bx, by, br, 0, Math.PI * 2);
+    }
+    ctx.fillStyle = `rgba(${cr},${cg},${cb},${alpha})`;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Polar ice caps
+  const capR = 22 + rng() * 20;
+  const northGrad = ctx.createRadialGradient(SIZE/2, 0, 0, SIZE/2, 0, capR);
+  northGrad.addColorStop(0,   'rgba(235,248,255,0.95)');
+  northGrad.addColorStop(0.6, 'rgba(215,235,250,0.55)');
+  northGrad.addColorStop(1,   'rgba(200,225,245,0)');
+  ctx.fillStyle = northGrad;
+  ctx.fillRect(0, 0, SIZE, capR * 1.6);
+
+  const southGrad = ctx.createRadialGradient(SIZE/2, SIZE, 0, SIZE/2, SIZE, capR);
+  southGrad.addColorStop(0,   'rgba(235,248,255,0.9)');
+  southGrad.addColorStop(0.6, 'rgba(215,235,250,0.5)');
+  southGrad.addColorStop(1,   'rgba(200,225,245,0)');
+  ctx.fillStyle = southGrad;
+  ctx.fillRect(0, SIZE - capR * 1.6, SIZE, capR * 1.6);
+
+  // Atmospheric edge glow
+  const atmo = ctx.createRadialGradient(SIZE/2, SIZE/2, SIZE*0.42, SIZE/2, SIZE/2, SIZE/2);
+  atmo.addColorStop(0,   'rgba(100,165,255,0)');
+  atmo.addColorStop(0.8, 'rgba(100,165,255,0.06)');
+  atmo.addColorStop(1,   'rgba(100,165,255,0.22)');
+  ctx.fillStyle = atmo;
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  applySphereShading(ctx, SIZE,
+    { inner: 0.25, stop: 0.6, midA: 0.15, outerA: 0.72 },
+    { ox: 0.33,   oy: 0.28,  r: 0.3,     a: 0.52 },
+  );
+  return Texture.from(canvas);
+}
+
+export function createMoonTexture(baseColor: number, seed: number): Texture {
+  const rng = createRng(seed);
+  const SIZE = 128;
+  const { canvas, ctx, r0, g0, b0 } = makeCircleCanvas(SIZE, baseColor);
+
+  // Maria — large dark irregular regions
+  const numMaria = Math.floor(rng() * 3) + 2;
+  for (let i = 0; i < numMaria; i++) {
+    const cx  = rng() * SIZE;
+    const cy  = rng() * SIZE;
+    const rad = 8 + rng() * 32;
+    const dk  = Math.round(25 + rng() * 45);
+    const cr  = Math.max(0, r0 - dk);
+    const cg  = Math.max(0, g0 - dk);
+    const cb  = Math.max(0, b0 - dk);
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+    grad.addColorStop(0,   `rgba(${cr},${cg},${cb},0.72)`);
+    grad.addColorStop(0.7, `rgba(${cr},${cg},${cb},0.38)`);
+    grad.addColorStop(1,   `rgba(${cr},${cg},${cb},0)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, SIZE, SIZE);
+  }
+
+  // Craters
+  const numCraters = Math.floor(rng() * 5) + 5;
+  for (let i = 0; i < numCraters; i++) {
+    const cx  = rng() * SIZE;
+    const cy  = rng() * SIZE;
+    const rad = 2 + rng() * 10;
+    const dk  = Math.round(20 + rng() * 35);
+    const cr  = Math.max(0, r0 - dk);
+    const cg  = Math.max(0, g0 - dk);
+    const cb  = Math.max(0, b0 - dk);
+    ctx.beginPath();
+    ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${cr},${cg},${cb},0.55)`;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${Math.min(255, r0 + 35)},${Math.min(255, g0 + 35)},${Math.min(255, b0 + 35)},0.38)`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  applySphereShading(ctx, SIZE,
+    { inner: 0.2,  stop: 0.55, midA: 0.22, outerA: 0.82 },
+    { ox: 0.34,   oy: 0.28,   r: 0.26,    a: 0.22 },
+  );
+  return Texture.from(canvas);
+}
+
+export function createGasGiantTexture(baseColor: number, seed: number, isIce = false): Texture {
+  const rng = createRng(seed);
+  const SIZE = 256;
+  const { canvas, ctx, r0, g0, b0 } = makeCircleCanvas(SIZE, baseColor);
 
   const numBands = isIce ? Math.floor(rng() * 3) + 4 : Math.floor(rng() * 4) + 6;
   const spread = isIce ? 35 : 55;
@@ -206,21 +440,9 @@ export function createGasGiantTexture(baseColor: number, seed: number, isIce = f
     y += bandH;
   }
 
-  // Sphere-edge shadow
-  const shadow = ctx.createRadialGradient(SIZE/2, SIZE/2, SIZE*0.25, SIZE/2, SIZE/2, SIZE/2);
-  shadow.addColorStop(0,   'rgba(0,0,0,0)');
-  shadow.addColorStop(0.6, 'rgba(0,0,0,0.15)');
-  shadow.addColorStop(1,   'rgba(0,0,0,0.72)');
-  ctx.fillStyle = shadow;
-  ctx.fillRect(0, 0, SIZE, SIZE);
-
-  // Specular highlight
-  const hi = ctx.createRadialGradient(SIZE*0.33, SIZE*0.28, 0, SIZE*0.33, SIZE*0.28, SIZE*0.32);
-  hi.addColorStop(0,   'rgba(255,255,255,0.45)');
-  hi.addColorStop(0.5, 'rgba(255,255,255,0.12)');
-  hi.addColorStop(1,   'rgba(255,255,255,0)');
-  ctx.fillStyle = hi;
-  ctx.fillRect(0, 0, SIZE, SIZE);
-
+  applySphereShading(ctx, SIZE,
+    { inner: 0.25, stop: 0.6, midA: 0.15, outerA: 0.72 },
+    { ox: 0.33,   oy: 0.28,  r: 0.32,    a: 0.45 },
+  );
   return Texture.from(canvas);
 }

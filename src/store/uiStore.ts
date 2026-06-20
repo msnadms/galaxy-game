@@ -4,8 +4,6 @@ import type { AddressComponent, AddressComponentType } from '../game/types';
 export type AppView = 'system' | 'galaxy' | 'supercluster';
 
 interface UIState {
-  showHyperlanes: boolean;
-  toggleHyperlanes: () => void;
   showAttractorLabels: boolean;
   toggleAttractorLabels: () => void;
   showOrbitRings: boolean;
@@ -15,7 +13,8 @@ interface UIState {
   exoticMatter: number;
   driveIntegrity: number;
   railgunAmmo: number;
-  setShipStats: (stats: { exoticMatter: number; driveIntegrity: number; railgunAmmo: number }) => void;
+  helium3Reserves: number;
+  setShipStats: (stats: { exoticMatter: number; driveIntegrity: number; railgunAmmo: number; helium3Reserves: number }) => void;
   view: AppView;
   setView: (view: AppView) => void;
   address: AddressComponent[];
@@ -40,8 +39,6 @@ function upsertAddress(address: AddressComponent[], component: AddressComponent)
 }
 
 export const useUIStore = create<UIState>((set) => ({
-  showHyperlanes: false,
-  toggleHyperlanes: () => set((s) => ({ showHyperlanes: !s.showHyperlanes })),
   showAttractorLabels: true,
   toggleAttractorLabels: () => set((s) => ({ showAttractorLabels: !s.showAttractorLabels })),
   showOrbitRings: false,
@@ -51,6 +48,7 @@ export const useUIStore = create<UIState>((set) => ({
   exoticMatter: 75,
   driveIntegrity: 98,
   railgunAmmo: 350,
+  helium3Reserves: 220,
   setShipStats: (stats) => set(stats),
   view: 'supercluster',
   setView: (view) => set({ view }),

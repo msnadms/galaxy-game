@@ -331,12 +331,19 @@ function GalaxyEntry({ galaxy, query, superclusterSeed, superclusterName, delete
   const [expanded, setExpanded] = useState(false);
   const forceExpand = query.length > 0;
   const isOpen = forceExpand || expanded;
+  const hasHabitable = useMemo(
+    () => galaxy.enrichedSystems.some((s) => systemHasHabitable(s.seed)),
+    [galaxy.enrichedSystems],
+  );
 
   return (
     <div className="codex-galaxy">
       <div className="codex-galaxy-header" onClick={() => !forceExpand && setExpanded((e) => !e)}>
         <span className="codex-chevron">{isOpen ? '▼' : '▶'}</span>
-        <span className="codex-galaxy-name">{highlight(galaxy.galaxyName, query)}</span>
+        <span className="codex-galaxy-name">
+          {highlight(galaxy.galaxyName, query)}
+          {hasHabitable && <span className="codex-habitable-dot" title="Contains habitable planet" />}
+        </span>
         <div className="codex-row-right">
           <span className="codex-galaxy-count">
             {galaxy.enrichedSystems.length} {galaxy.enrichedSystems.length === 1 ? 'star' : 'stars'}
@@ -377,10 +384,14 @@ function GalaxyEntry({ galaxy, query, superclusterSeed, superclusterName, delete
   );
 }
 
+function systemHasHabitable(seed: number): boolean {
+  return generateSystemLayout(seed).planets.some((p) => p.zone === 'habitable');
+}
+
 function SystemPlanets({ seed, name, query }: { seed: number; name: string; query: string }) {
   const planets = useMemo(
-    () => generatePlanets(generateSystemLayout(seed), name),
-    [seed, name],
+    () => generatePlanets(generateSystemLayout(seed)),
+    [seed],
   );
   return (
     <div className="codex-planets">
@@ -409,12 +420,16 @@ function SystemEntry({ system, query, superclusterSeed, superclusterName, galaxy
   const [expanded, setExpanded] = useState(false);
   const forceExpand = query.length > 0;
   const isOpen = forceExpand || expanded;
+  const hasHabitable = useMemo(() => systemHasHabitable(system.seed), [system.seed]);
 
   return (
     <div className="codex-system">
       <div className="codex-system-header" onClick={() => !forceExpand && setExpanded((e) => !e)}>
         <span className="codex-chevron">{isOpen ? '▼' : '▶'}</span>
-        <span className="codex-system-name">{highlight(system.name, query)}</span>
+        <span className="codex-system-name">
+          {highlight(system.name, query)}
+          {hasHabitable && <span className="codex-habitable-dot" title="Contains habitable planet" />}
+        </span>
         <div className="codex-row-right">
           <span className="codex-star-type">{STAR_TYPE_LABELS[system.starType]}</span>
           {deleteMode ? (

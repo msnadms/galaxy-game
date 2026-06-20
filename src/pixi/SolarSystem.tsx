@@ -9,10 +9,10 @@ import { BackgroundStars } from "./BackgroundStars";
 import { ScaleBar } from "./ScaleBar";
 import { generateSystemLayout, ORBITAL_K, MOON_K } from "../game/planetGen";
 import { createRng } from "../game/galaxyGen";
-import { createSunTexture, createNebulaGlowTexture, createGasGiantTexture } from "./textures";
+import { createSunTexture, createNebulaGlowTexture, createGasGiantTexture, createRockyPlanetTexture, createHabitablePlanetTexture, createMoonTexture } from "./textures";
 import type { PlanetLayout } from "../game/planetGen";
 
-type MoonState   = { gfx: Graphics; angle: number; speed: number; dist: number };
+type MoonState   = { gfx: Sprite; angle: number; speed: number; dist: number };
 type PlanetState = { container: Container; angle: number; speed: number; orbitRadius: number; moons: MoonState[] };
 
 function createPlanetRings(rx: number, ry: number): { back: Graphics; front: Graphics } {
@@ -33,12 +33,6 @@ function createPlanetRings(rx: number, ry: number): { back: Graphics; front: Gra
   return { back, front };
 }
 
-function createBodyGfx(radius: number, color: number, highlightAlpha: number): Graphics {
-  const gfx = new Graphics();
-  gfx.circle(0, 0, radius).fill({ color });
-  gfx.circle(-radius * 0.28, -radius * 0.28, radius * 0.4).fill({ color: 0xffffff, alpha: highlightAlpha });
-  return gfx;
-}
 
 const ASTEROID_COLORS = [0x888888, 0x999999, 0xaaaaaa, 0x776655, 0x887766, 0x998877];
 const SYSTEM_NICE_VALUES = [1, 2, 5, 10, 20, 30, 60];
@@ -167,15 +161,17 @@ function SolarSystem() {
 
       systemGfx.circle(0, 0, pl.orbitRadius);
 
+      const pr = pl.radius;
       const atmosphereGfx = new Graphics();
-      atmosphereGfx.circle(0, 0, pl.radius * 1.8).fill({ color: pl.color, alpha: 0.08 });
-      atmosphereGfx.circle(0, 0, pl.radius * 1.3).fill({ color: pl.color, alpha: 0.14 });
+      atmosphereGfx.circle(0, 0, pr * 1.8).fill({ color: pl.color, alpha: 0.08 });
+      atmosphereGfx.circle(0, 0, pr * 1.3).fill({ color: pl.color, alpha: 0.14 });
       planetContainer.addChild(atmosphereGfx);
 
-      const rings = pl.hasRings ? createPlanetRings(pl.radius * 2.4, pl.radius * 0.5) : null;
+      const rings = pl.hasRings ? createPlanetRings(pr * 2.4, pr * 0.5) : null;
       if (rings) planetContainer.addChild(rings.back);
 
-      for (const moon of pl.moons) {
+      for (let m = 0; m < pl.moons.length; m++) {
+        const moon = pl.moons[m];
         const moonSpeed = MOON_K / Math.pow(moon.dist, 1.5);
 
         const moonOrbitGfx = new Graphics();
@@ -183,32 +179,40 @@ function SolarSystem() {
         allOrbitGfx.push(moonOrbitGfx);
         planetContainer.addChild(moonOrbitGfx);
 
-        const moonGfx = createBodyGfx(moon.radius, moon.color, 0.18);
-        moonGfx.x = Math.cos(moon.angle) * moon.dist;
-        moonGfx.y = Math.sin(moon.angle) * moon.dist;
-        planetContainer.addChild(moonGfx);
+        const mr = moon.radius;
+        const moonSeed = (system.seed + ring * 0x9e3779b9 + (m + 1) * 0x7f4a9c3b) >>> 0;
+        const moonTex = createMoonTexture(moon.color, moonSeed);
+        planetTextures.push(moonTex);
+        const moonSprite = new Sprite(moonTex);
+        moonSprite.anchor.set(0.5);
+        moonSprite.width  = mr * 2;
+        moonSprite.height = mr * 2;
+        moonSprite.x = Math.cos(moon.angle) * moon.dist;
+        moonSprite.y = Math.sin(moon.angle) * moon.dist;
+        planetContainer.addChild(moonSprite);
 
-        planet.moons.push({ gfx: moonGfx, angle: moon.angle, speed: moonSpeed, dist: moon.dist });
+        planet.moons.push({ gfx: moonSprite, angle: moon.angle, speed: moonSpeed, dist: moon.dist });
       }
 
-      if (pl.zone === 'gas' || pl.zone === 'ice') {
-        const tex    = createGasGiantTexture(pl.color, system.seed + ring * 0x9e3779b9, pl.zone === 'ice');
-        planetTextures.push(tex);
-        const sprite = new Sprite(tex);
-        sprite.anchor.set(0.5);
-        sprite.width  = pl.radius * 2;
-        sprite.height = pl.radius * 2;
-        planetContainer.addChild(sprite);
-      } else {
-        planetContainer.addChild(createBodyGfx(pl.radius, pl.color, 0.22));
-      }
+      const planetSeed = (system.seed + ring * 0x9e3779b9) >>> 0;
+      const planetTex = (pl.zone === 'gas' || pl.zone === 'ice')
+        ? createGasGiantTexture(pl.color, planetSeed, pl.zone === 'ice')
+        : pl.zone === 'habitable'
+          ? createHabitablePlanetTexture(pl.color, planetSeed)
+          : createRockyPlanetTexture(pl.color, planetSeed);
+      planetTextures.push(planetTex);
+      const planetSprite = new Sprite(planetTex);
+      planetSprite.anchor.set(0.5);
+      planetSprite.width  = pr * 2;
+      planetSprite.height = pr * 2;
+      planetContainer.addChild(planetSprite);
 
       if (rings) planetContainer.addChild(rings.front);
       systemContainer.addChild(planetContainer);
       planets.push(planet);
     }
 
-    systemGfx.stroke({ color: 0xffffff, width: 5, alpha: 0.25 });
+    systemGfx.stroke({ color: 0xffffff, width: 2, alpha: 0.25 });
     for (const gfx of allOrbitGfx) gfx.visible = showOrbitRingsRef.current;
     orbitGfxRef.current = allOrbitGfx;
 
@@ -227,7 +231,6 @@ function SolarSystem() {
     const nebulaSprite  = createNebulaSprite(system.color, sunRadius);
     const nebulaTexture = nebulaSprite.texture;
     const coronaContainer = createCorona(system.seed, system.color, sunRadius);
-
     systemContainer.addChildAt(nebulaSprite, 0);
     systemContainer.addChildAt(systemGfx, 1);
     if (asteroidBelt) systemContainer.addChildAt(asteroidBelt, 2);

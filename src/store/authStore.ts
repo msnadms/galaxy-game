@@ -36,13 +36,13 @@ export function initAuth(): () => void {
         loadAllDiscoveries(user.uid),
       ]);
       useUIStore.setState({
-        showHyperlanes: settings.showHyperlanes,
         showOrbitRings: settings.showOrbitRings,
         showAttractorLabels: settings.showAttractorLabels,
         showHUD: settings.showHUD,
         exoticMatter: settings.exoticMatter,
         driveIntegrity: settings.driveIntegrity,
         railgunAmmo: settings.railgunAmmo,
+        helium3Reserves: settings.helium3Reserves,
       });
       useCodexStore.getState().setAll(discoveries);
 

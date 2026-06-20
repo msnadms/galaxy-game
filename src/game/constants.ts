@@ -56,14 +56,6 @@ export const DISK_GAP_SCATTER = 0.7;
 export const DISK_SIZE_SCALE = 0.6;
 
 
-// ─── Hyperlanes ──────────────────────────────────────────────────────────────
-
-// Maximum distance for hyperlanes between stars on the same spiral arm.
-export const MAX_LANE_DIST_ARM = 500;
-
-// Maximum distance for hyperlanes involving disk or bulge stars (cross-arm / radial links).
-export const MAX_LANE_DIST = 100;
-
 // ─── Background starfield ────────────────────────────────────────────────────
 
 // Total number of decorative background stars generated.

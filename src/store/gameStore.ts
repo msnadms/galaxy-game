@@ -57,7 +57,7 @@ export const useGameStore = create<GameState>((set) => ({
     };
   }),
   setSystem: (system) => set({
-    system: system ? { ...system, planets: generatePlanets(generateSystemLayout(system.seed), system.name) } : null,
+    system: system ? { ...system, planets: generatePlanets(generateSystemLayout(system.seed)) } : null,
   }),
   markDotVisited: (seed) => set((state) => {
     const scSeed = state.supercluster.seed;

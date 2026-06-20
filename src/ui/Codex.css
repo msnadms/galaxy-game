@@ -264,6 +264,9 @@
 
 .codex-galaxy-name {
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
   color: #b0ccec;
   font-weight: 500;
 }
@@ -303,6 +306,9 @@
 
 .codex-system-name {
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
   color: #8aa4bc;
   font-weight: 500;
   transition: color 0.1s;
@@ -339,9 +345,20 @@
 }
 
 .codex-zone-dot.hot      { background: #c05030; }
+.codex-zone-dot.marginal  { background: #9e6030; }
 .codex-zone-dot.habitable { background: #3a8a5a; }
 .codex-zone-dot.gas      { background: #b08040; }
 .codex-zone-dot.ice      { background: #4070a0; }
+
+.codex-habitable-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3a8a5a;
+  box-shadow: 0 0 5px rgba(58, 138, 90, 0.75);
+  flex-shrink: 0;
+}
 
 .codex-planet-name {
   color: #7090a8;

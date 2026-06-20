@@ -21,7 +21,6 @@ import {
 } from '../game/constants';
 import { createDisplacementSetup } from './textures';
 import { createRng } from '../game/galaxyGen';
-import { HyperlaneLayer } from './HyperlaneLayer';
 import { StarNode } from './StarNode';
 import { useCamera } from './useCamera';
 import { ScaleBar } from './ScaleBar';
@@ -48,7 +47,6 @@ function GalaxyWorld() {
   const setSystem = useGameStore((s) => s.setSystem);
   const pushAddress = useUIStore((s) => s.pushAddress);
   const popAddress = useUIStore((s) => s.popAddress);
-  const showHyperlanes = useUIStore((s) => s.showHyperlanes);
   const setView = useUIStore((s) => s.setView);
   const config = galaxy.config;
 
@@ -191,7 +189,6 @@ function GalaxyWorld() {
     <>
       <BackgroundStars stars={galaxy.backgroundStars} />
       <pixiContainer ref={worldRef} visible={isReady}>
-        {showHyperlanes && <HyperlaneLayer galaxy={galaxy} />}
         {galaxy.systems.map((system) => (
           <StarNode key={system.id} system={system} onSelect={handleSelectSystem} />
         ))}

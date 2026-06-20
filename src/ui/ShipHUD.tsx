@@ -59,6 +59,7 @@ export function ShipHUD() {
   const exoticMatter = useUIStore((s) => s.exoticMatter);
   const driveIntegrity = useUIStore((s) => s.driveIntegrity);
   const railgunAmmo = useUIStore((s) => s.railgunAmmo);
+  const helium3Reserves = useUIStore((s) => s.helium3Reserves);
 
   return (
     <div className="ship-hud" aria-hidden="true">
@@ -96,6 +97,12 @@ export function ShipHUD() {
         <span className="hud-label">RAILGUN RESERVES</span>
         <StatBar value={railgunAmmo} max={500} />
         <span className="hud-value">{railgunAmmo} <span className="hud-value-dim">/ 500</span></span>
+      </div>
+
+      <div className="hud-row">
+        <span className="hud-label">HELIUM-3 RESERVES</span>
+        <StatBar value={helium3Reserves} max={500} />
+        <span className="hud-value">{helium3Reserves} <span className="hud-value-dim">/ 500</span></span>
       </div>
     </div>
   );

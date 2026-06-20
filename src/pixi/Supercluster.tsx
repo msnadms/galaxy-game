@@ -7,7 +7,6 @@ import { useAuthStore } from '../store/authStore';
 import { useCodexStore } from '../store/codexStore';
 import { buildAddressComponent, type SuperclusterDot } from '../game/types';
 import { useCamera } from './useCamera';
-import { createDisplacementSetup } from './textures';
 import { SC_CAMERA_INITIAL_SCALE, SC_WORLD_HALF, SC_WORLD_HALF_MLY, SC_ATTRACTOR_LABEL_MAX_DIST, OBS_UNIVERSE_RADIUS } from '../game/constants';
 import { ScaleBar } from './ScaleBar';
 import { createRng } from '../game/galaxyGen';
@@ -17,13 +16,34 @@ import { saveGalaxyDiscovery, saveSuperclusterDiscovery } from '../firebase/disc
 
 const SC_NICE_VALUES = [5, 10, 25, 50, 100, 150, 200, 300, 500];
 
-const BRIGHTNESS_TIERS = [
-  { min: 0.80, radius: 3.5, color: 0xffee00, alpha: 1.00 },
-  { min: 0.60, radius: 2.8, color: 0xff8800, alpha: 0.96 },
-  { min: 0.40, radius: 2.3, color: 0xff0088, alpha: 0.88 },
-  { min: 0.20, radius: 1.8, color: 0xaa00ff, alpha: 0.75 },
-  { min: -Infinity, radius: 1.4, color: 0x6600cc, alpha: 0.55 },
+const N_BLINK_GROUPS = 10;
+const BLINK_FREQ = 0.22;
+const BLINK_MIN  = 0.25;
+const BLINK_MAX  = 1.0;
+
+const TIER_BASE = [
+  { min: 0.80, radius: 3.5, alpha: 1.00 },
+  { min: 0.60, radius: 2.8, alpha: 0.96 },
+  { min: 0.40, radius: 2.3, alpha: 0.88 },
+  { min: 0.20, radius: 1.8, alpha: 0.75 },
+  { min: -Infinity, radius: 1.4, alpha: 0.55 },
 ];
+
+const DOT_PALETTES = [
+  [0xffee44, 0xff44dd, 0xaa00ff, 0xff0066, 0x440088], // Cosmic:   yellow → magenta → purple → hot-pink → deep-violet
+  [0x44ffee, 0xff8800, 0xcc00ff, 0x0088ff, 0x110055], // Plasma:   cyan → orange → violet → electric-blue → midnight
+  [0x99ff33, 0xff55aa, 0xffaa00, 0x00ff88, 0x550022], // Verdant:  lime → rose → gold → mint → deep-rose
+  [0xff5544, 0x44ffee, 0xcc00ff, 0xff0044, 0x110044], // Stellar:  red → cyan → violet → crimson → midnight
+  [0xffcc00, 0x00ffcc, 0xaa00ff, 0xff7700, 0x002244], // Solaris:  gold → teal → violet → amber → deep-teal
+  [0xff88ff, 0x44aaff, 0xff8844, 0xff00bb, 0x001166], // Blossom:  pink → sky-blue → coral → magenta → deep-navy
+  [0xbbffff, 0xffcc00, 0xff00cc, 0x88eeff, 0x440033], // Frost:    ice → gold → magenta → pale-sky → deep-magenta
+  [0xffeeaa, 0xffaa22, 0xee2266, 0x7700ee, 0x220055], // Galactic: gold → amber → crimson → violet → midnight
+];
+
+function getBrightnessTiers(seed: number) {
+  const colors = DOT_PALETTES[seed % DOT_PALETTES.length];
+  return TIER_BASE.map((t, i) => ({ ...t, color: colors[i] }));
+}
 
 export function Supercluster() {
   return (
@@ -57,23 +77,36 @@ function SuperclusterWorld() {
     const [x, y, z] = [obsUniverseCoords(), obsUniverseCoords(), obsUniverseCoords()];
     pushAddress(buildAddressComponent(scData.name, x, y, z, 'supercluster'))
 
-    const buckets: SuperclusterDot[][] = BRIGHTNESS_TIERS.map(() => []);
+    const tiers = getBrightnessTiers(scData.seed);
+    const buckets: SuperclusterDot[][] = tiers.map(() => []);
     const visitedDots: SuperclusterDot[] = [];
     for (const dot of scData.dots) {
-      buckets[BRIGHTNESS_TIERS.findIndex(t => dot.brightness > t.min)].push(dot);
+      buckets[tiers.findIndex(t => dot.brightness > t.min)].push(dot);
       if (dot.visited) visitedDots.push(dot);
     }
-    
+
     const scContainer = new Container();
-    const dotGfx = new Graphics();
-    for (let i = 0; i < BRIGHTNESS_TIERS.length; i++) {
-      for (const d of buckets[i]) dotGfx.circle(d.x, d.y, BRIGHTNESS_TIERS[i].radius);
-      dotGfx.fill({ color: BRIGHTNESS_TIERS[i].color, alpha: BRIGHTNESS_TIERS[i].alpha });
+
+    const dotsContainer = new Container();
+    dotsContainer.blendMode = 'screen';
+    const blurFilter = new BlurFilter({ strength: 0.05 });
+    dotsContainer.filters = [blurFilter];
+
+    const blinkGroups: Graphics[] = [];
+    for (let g = 0; g < N_BLINK_GROUPS; g++) {
+      const gfx = new Graphics();
+      blinkGroups.push(gfx);
+      dotsContainer.addChild(gfx);
     }
 
-    const blurFilter = new BlurFilter({ strength: 0.05 });
-    dotGfx.filters = [blurFilter];
-    dotGfx.blendMode = 'screen';
+    for (let i = 0; i < tiers.length; i++) {
+      for (const d of buckets[i]) {
+        blinkGroups[d.seed % N_BLINK_GROUPS].circle(d.x, d.y, tiers[i].radius);
+      }
+      for (let g = 0; g < N_BLINK_GROUPS; g++) {
+        blinkGroups[g].fill({ color: tiers[i].color, alpha: tiers[i].alpha });
+      }
+    }
 
     const visitedGfx = new Graphics();
     for (const d of visitedDots) visitedGfx.circle(d.x, d.y, 8);
@@ -81,17 +114,18 @@ function SuperclusterWorld() {
     for (const d of visitedDots) visitedGfx.circle(d.x, d.y, 11);
     visitedGfx.stroke({ color: 0xffffff, width: 0.5, alpha: 0.25 });
 
-    const disp = createDisplacementSetup(scContainer, 8);
-
-    scContainer.addChild(dotGfx);
+    scContainer.addChild(dotsContainer);
     scContainer.addChild(visitedGfx);
-
     world.addChild(scContainer);
 
     let elapsedSecs = 0;
     const tick = (ticker: Ticker) => {
       elapsedSecs += ticker.deltaMS / 1000;
-      disp.update(elapsedSecs, Math.max(camera.current.scale * 10 - 5, 0));
+      for (let g = 0; g < N_BLINK_GROUPS; g++) {
+        const phase = (g / N_BLINK_GROUPS) * Math.PI * 2;
+        const t = 0.5 + 0.5 * Math.sin(elapsedSecs * BLINK_FREQ * Math.PI * 2 + phase);
+        blinkGroups[g].alpha = BLINK_MIN + (BLINK_MAX - BLINK_MIN) * t;
+      }
     };
     Ticker.shared.add(tick);
 
@@ -100,7 +134,6 @@ function SuperclusterWorld() {
       world.removeChild(scContainer);
       scContainer.destroy({ children: true });
       blurFilter.destroy();
-      disp.destroy();
     };
   }, [scData, app, isInitialised]);
 

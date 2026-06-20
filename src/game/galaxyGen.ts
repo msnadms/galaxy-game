@@ -1,5 +1,4 @@
-import { Delaunay } from 'd3-delaunay';
-import type { Galaxy, StarSystem, Hyperlane, StarType, BackgroundStar, Rng } from './types';
+import type { Galaxy, StarSystem, StarType, BackgroundStar, Rng } from './types';
 import {
   GALAXY_RADIUS,
   BULGE_FRACTION,
@@ -9,8 +8,6 @@ import {
   ARM_INNER_FRACTION,
   ARM_SPREAD,
   ARM_SPREAD_BASE,
-  MAX_LANE_DIST,
-  MAX_LANE_DIST_ARM,
   BACKGROUND_STAR_COUNT,
   BACKGROUND_STAR_AREA_X,
   BACKGROUND_STAR_AREA_Y,
@@ -182,33 +179,11 @@ export function generateGalaxy(seed = Date.now()): Galaxy {
     };
   });
 
-  const delaunay = Delaunay.from(positions);
-  const hyperlanes: Hyperlane[] = [];
-  const visitedEdges = new Set<string>();
-  for (let i = 0; i < delaunay.triangles.length; i += 3) {
-    const triangle = [delaunay.triangles[i], delaunay.triangles[i + 1], delaunay.triangles[i + 2]];
-    const edges: [number, number][] = [[triangle[0], triangle[1]], [triangle[1], triangle[2]], [triangle[0], triangle[2]]];
-
-    for (const [nodeA, nodeB] of edges) {
-      const edgeKey = `${Math.min(nodeA, nodeB)}-${Math.max(nodeA, nodeB)}`;
-      if (visitedEdges.has(edgeKey)) continue;
-      visitedEdges.add(edgeKey);
-
-      const deltaX = positions[nodeA][0] - positions[nodeB][0];
-      const deltaY = positions[nodeA][1] - positions[nodeB][1];
-      const sameArm = armIndices[nodeA] !== null && armIndices[nodeA] === armIndices[nodeB];
-
-      if (Math.hypot(deltaX, deltaY) < (sameArm ? MAX_LANE_DIST_ARM : MAX_LANE_DIST)) {
-        hyperlanes.push({ from: nodeA, to: nodeB });
-      }
-    }
-  }
-
   const backgroundStars: BackgroundStar[] = Array.from({ length: BACKGROUND_STAR_COUNT }, () => ({
     x: (rng() - 0.5) * BACKGROUND_STAR_AREA_X,
     y: (rng() - 0.5) * BACKGROUND_STAR_AREA_Y,
     brightness: rng(),
   }));
 
-  return { systems, hyperlanes, backgroundStars, config, seed };
+  return { systems, backgroundStars, config, seed };
 }

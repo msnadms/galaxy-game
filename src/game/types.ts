@@ -24,11 +24,6 @@ export interface StarSystem {
   planets?: Planet[];
 }
 
-export interface Hyperlane {
-  from: number;
-  to: number;
-}
-
 export interface BackgroundStar {
   x: number;
   y: number;
@@ -39,7 +34,6 @@ export type Rng = () => number;
 
 export interface Galaxy {
   systems: StarSystem[];
-  hyperlanes: Hyperlane[];
   backgroundStars: BackgroundStar[];
   config: GalaxyConfig;
   seed: number;
@@ -78,7 +72,7 @@ export interface SuperclusterData {
 }
 
 export interface Resource {
-  type: 'exotic' | 'alloys' | 'nutrients'
+  type: 'exotic' | 'alloys' | 'nutrients' | 'helium-3'
   count: number;
 }
 
@@ -94,7 +88,7 @@ export interface Planet {
   moons: Moon[];
 }
 
-export type ZoneType = 'hot' | 'habitable' | 'gas' | 'ice';
+export type ZoneType = 'hot' | 'marginal' | 'habitable' | 'gas' | 'ice';
 
 export type AddressComponentType = 'universe' | 'supercluster' | 'attractor' | 'galaxy' | 'system'
 

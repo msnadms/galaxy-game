@@ -4,11 +4,13 @@
   min-width: 160px;
   font-size: 12px;
   user-select: none;
+  gap: 10px;
 }
 
 .config-header {
   display: flex;
   align-items: center;
+  width: 160px;
   gap: 6px;
   padding: 6px 10px;
   background: rgba(6, 12, 28, 0.88);
@@ -52,6 +54,8 @@
 .config-body {
   margin-top: 2px;
   padding: 8px 10px;
+  width: 160px;
+  box-sizing: border-box;
   background: rgba(6, 12, 28, 0.88);
   border: 1px solid rgba(40, 80, 120, 0.5);
   border-radius: 4px;
@@ -72,6 +76,31 @@
 .config-row-label {
   color: #8aa4bc;
   letter-spacing: 0.03em;
+}
+
+.tutorial-body {
+  gap: 12px;
+}
+
+.tutorial-section {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.tutorial-section-title {
+  color: #99bbdd;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.tutorial-item {
+  color: #6a90b0;
+  padding-left: 8px;
+  border-left: 1px solid rgba(60, 110, 160, 0.35);
+  line-height: 1.55;
 }
 
 /* Visually hidden but keyboard-focusable checkbox backing the custom toggle */
