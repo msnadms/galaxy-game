@@ -1,7 +1,8 @@
 {
   "galaxyName": "Milky Way Galaxy",
   "galaxySeed": 1284563017,
-  "nebulaColorIndex": 4,
+  "numArms": 2,
+  "nebulaColorIndex": 1,
   "innerNebulaColorIndex": 2,
   "systems": [
     { "id": 0, "x": 430, "y": 100, "name": "Sol",              "starType": "G", "color": 16769658, "size": 1.8, "arm": 1 },

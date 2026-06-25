@@ -4,9 +4,10 @@ import { useGameStore } from '../store/gameStore';
 import { flatTravelCost, trySpendTravelCost } from '../store/travelCosts';
 import { useExtractorStore, AUTO_DELIVERY_COST_PER_STATION, peekAccumulated } from '../store/extractorStore';
 import { RESOURCE_LABELS } from '../game/types';
+import { MSG_DRIVE_REQUIRED_SUPERCLUSTER, SHIP_NAME } from './strings';
 import { useAuthStore } from '../store/authStore';
 import { deleteExtractor } from '../firebase/extractors';
-import { fireBackZoom } from '../pixi/zoomAnim';
+import { fireBackZoom, fireCodexNavigate } from '../pixi/zoomAnim';
 import { Codex } from './Codex';
 import { ShipUpgradePanel } from './ShipUpgradePanel';
 import { AlloysIcon, NutrientsIcon, MetallicHydrogenIcon, NeutronStarMatterIcon } from './CargoIcons';
@@ -96,17 +97,24 @@ const NavBack = memo(function NavBack() {
 
 const NavRegen = memo(function NavRegen() {
   const regenerateSupercluster = useGameStore((s) => s.regenerateSupercluster);
-  const setView = useUIStore((s) => s.setView);
   const clearAddress = useUIStore((s) => s.clearAddress);
   const view = useUIStore((s) => s.view);
 
   const disabled = view !== 'supercluster';
 
   function handleRegen() {
+    const { driveA, triggerHudNotify } = useUIStore.getState();
+    if (driveA < 2) {
+      triggerHudNotify(MSG_DRIVE_REQUIRED_SUPERCLUSTER);
+      return;
+    }
     if (!trySpendTravelCost(flatTravelCost(50))) return;
+    if (fireCodexNavigate(
+      () => useUIStore.getState().setViewTransitioning(true),
+      () => { regenerateSupercluster(); clearAddress(); },
+    )) return;
     regenerateSupercluster();
     clearAddress();
-    setView('supercluster');
   }
 
   return (
@@ -238,6 +246,8 @@ export function ShipHUD() {
   const metallicHydrogen = useUIStore((s) => s.metallicHydrogen);
   const neutronStarMatter = useUIStore((s) => s.neutronStarMatter);
   const hudFlash = useUIStore((s) => s.hudFlash);
+  const hudNotify = useUIStore((s) => s.hudNotify);
+  const hudNotifyMsg = useUIStore((s) => s.hudNotifyMsg);
   const storageA = useUIStore((s) => s.storageA);
   const weaponA = useUIStore((s) => s.weaponA);
   const weaponB = useUIStore((s) => s.weaponB);
@@ -284,7 +294,10 @@ export function ShipHUD() {
         <line vectorEffect="non-scaling-stroke" x1="1" y1="0.1" x2="0.96" y2="0.1" stroke="rgba(0, 210, 255, 0.7)" strokeWidth="1" />
       </svg>
 
-      <div className="hud-header">NAV CONSOLE</div>
+      {hudNotify > 0 && (
+        <div key={hudNotify} className="hud-notification">{hudNotifyMsg}</div>
+      )}
+      <div className="hud-header">{SHIP_NAME} | CENTRAL CONTROL</div>
 
       <div className="hud-content">
         <div className="hud-rows">

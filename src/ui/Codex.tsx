@@ -12,6 +12,7 @@ import './Codex.css';
 import { useUIStore } from '../store/uiStore';
 import { useGameStore } from '../store/gameStore';
 import { fireCodexNavigate } from '../pixi/zoomAnim';
+import { MSG_DRIVE_REQUIRED_GALAXY, MSG_DRIVE_REQUIRED_SUPERCLUSTER } from './strings';
 import { useExtractorStore } from '../store/extractorStore';
 import { useSettlementStore } from '../store/settlementStore';
 
@@ -129,7 +130,8 @@ function CodexDrawer({ onClose }: { onClose: () => void }) {
 
   const hasDiscoveries = enriched.length > 0;
 
-  function handleNavigate(travel: () => void) {
+  function handleNavigate(preCheck: () => boolean, travel: () => void) {
+    if (!preCheck()) return;
     onClose();
     const animated = fireCodexNavigate(
       () => useUIStore.getState().setViewTransitioning(true),
@@ -227,10 +229,53 @@ function pushAttractor(ui: ReturnType<typeof useUIStore.getState>, sc: ReturnTyp
   pushAttractorAddress(sc.attractors, dotX, dotY, ui.pushAddress, ui.removeAddressType);
 }
 
+function canTravelToSupercluster(scSeed: number): boolean {
+  const { supercluster } = useGameStore.getState();
+  const { driveA, triggerHudNotify } = useUIStore.getState();
+  if (supercluster.seed !== scSeed && driveA < 2) {
+    triggerHudNotify(MSG_DRIVE_REQUIRED_SUPERCLUSTER);
+    return false;
+  }
+  return true;
+}
+
+function canTravelToGalaxy(scSeed: number, galaxySeed: number): boolean {
+  const game = useGameStore.getState();
+  const { driveA, triggerHudNotify } = useUIStore.getState();
+  const isCurrent = game.supercluster.seed === scSeed && game.galaxy.seed === galaxySeed;
+  if (!isCurrent) {
+    if (game.supercluster.seed !== scSeed) {
+      if (driveA < 2) { triggerHudNotify(MSG_DRIVE_REQUIRED_SUPERCLUSTER); return false; }
+    } else if (driveA < 1) {
+      triggerHudNotify(MSG_DRIVE_REQUIRED_GALAXY);
+      return false;
+    }
+  }
+  return true;
+}
+
+function canTravelToSystem(scSeed: number, galaxySeed: number, systemId: string): boolean {
+  const game = useGameStore.getState();
+  const { driveA, triggerHudNotify } = useUIStore.getState();
+  const isCurrent = game.supercluster.seed === scSeed && game.galaxy.seed === galaxySeed && String(game.system?.id) === systemId;
+  if (!isCurrent) {
+    if (game.supercluster.seed !== scSeed) {
+      if (driveA < 2) { triggerHudNotify(MSG_DRIVE_REQUIRED_SUPERCLUSTER); return false; }
+    } else if (game.galaxy.seed !== galaxySeed) {
+      if (driveA < 1) { triggerHudNotify(MSG_DRIVE_REQUIRED_GALAXY); return false; }
+    }
+  }
+  return true;
+}
+
 function travelToSupercluster(scSeed: number, scName: string) {
   const game = useGameStore.getState();
   const ui = useUIStore.getState();
   if (game.supercluster.seed !== scSeed) {
+    if (ui.driveA < 2) {
+      ui.triggerHudNotify(MSG_DRIVE_REQUIRED_SUPERCLUSTER);
+      return;
+    }
     if (!trySpendTravelCost(flatTravelCost(50))) return;
   }
   ui.clearAddress();
@@ -248,8 +293,16 @@ function travelToGalaxy(scSeed: number, scName: string, galaxySeed: number, gala
   if (!isCurrent) {
     let cost: { exotic: number; helium: number };
     if (game.supercluster.seed !== scSeed) {
+      if (ui.driveA < 2) {
+        ui.triggerHudNotify(MSG_DRIVE_REQUIRED_SUPERCLUSTER);
+        return;
+      }
       cost = flatTravelCost(50);
     } else {
+      if (ui.driveA < 1) {
+        ui.triggerHudNotify(MSG_DRIVE_REQUIRED_GALAXY);
+        return;
+      }
       const currentDot = game.supercluster.dots.find((d) => d.seed === game.galaxy.seed);
       const targetDot = game.supercluster.dots.find((d) => d.seed === galaxySeed);
       const dist = Math.hypot((targetDot?.x ?? 0) - (currentDot?.x ?? 0), (targetDot?.y ?? 0) - (currentDot?.y ?? 0));
@@ -281,8 +334,16 @@ function travelToSystem(
   if (!isCurrent) {
     let cost: { exotic: number; helium: number };
     if (game.supercluster.seed !== scSeed) {
+      if (ui.driveA < 2) {
+        ui.triggerHudNotify(MSG_DRIVE_REQUIRED_SUPERCLUSTER);
+        return;
+      }
       cost = flatTravelCost(50);
     } else if (game.galaxy.seed !== galaxySeed) {
+      if (ui.driveA < 1) {
+        ui.triggerHudNotify(MSG_DRIVE_REQUIRED_GALAXY);
+        return;
+      }
       cost = flatTravelCost(15);
     } else {
       const currentSystem = game.system;
@@ -313,7 +374,7 @@ function travelToSystem(
 }
 
 interface DeleteHandlers {
-  onNavigate: (travel: () => void) => void;
+  onNavigate: (preCheck: () => boolean, travel: () => void) => void;
   onDeleteSupercluster: (scSeed: number) => void;
   onDeleteGalaxy: (scSeed: number, galaxySeed: number) => void;
   onDeleteSystem: (scSeed: number, galaxySeed: number, systemId: string) => void;
@@ -323,6 +384,12 @@ function SuperclusterEntry({ supercluster, query, deleteMode, allExtractorKeys, 
   const [expanded, setExpanded] = useState(true);
   const forceExpand = query.length > 0;
   const isOpen = forceExpand || expanded;
+  const hasActiveInstallation = useMemo(() => {
+    const galSeeds = supercluster.enrichedGalaxies.map((g) => `${g.galaxySeed}|`);
+    const keys = allExtractorKeys.split('\0');
+    const settKeys = allSettlementKeys.split('\0');
+    return galSeeds.some((prefix) => keys.some((k) => k.startsWith(prefix)) || settKeys.some((k) => k.startsWith(prefix)));
+  }, [supercluster.enrichedGalaxies, allExtractorKeys, allSettlementKeys]);
 
   return (
     <div className="codex-supercluster">
@@ -336,14 +403,15 @@ function SuperclusterEntry({ supercluster, query, deleteMode, allExtractorKeys, 
           {deleteMode ? (
             <button
               className="codex-delete-btn"
-              title="Forget supercluster"
+              title={hasActiveInstallation ? 'Cannot forget: has active extraction station or colony' : 'Forget supercluster'}
+              disabled={hasActiveInstallation}
               onClick={(e) => { e.stopPropagation(); onDeleteSupercluster(supercluster.superclusterSeed); }}
             >✕</button>
           ) : (
             <button
               className="codex-travel-btn"
               title="Travel to supercluster"
-              onClick={(e) => { e.stopPropagation(); onNavigate(() => travelToSupercluster(supercluster.superclusterSeed, supercluster.superclusterName)); }}
+              onClick={(e) => { e.stopPropagation(); onNavigate(() => canTravelToSupercluster(supercluster.superclusterSeed), () => travelToSupercluster(supercluster.superclusterSeed, supercluster.superclusterName)); }}
             >⊙</button>
           )}
         </div>
@@ -411,14 +479,15 @@ function GalaxyEntry({ galaxy, query, superclusterSeed, superclusterName, delete
           {deleteMode ? (
             <button
               className="codex-delete-btn"
-              title="Forget galaxy"
+              title={hasMiningStation || hasColony ? 'Cannot forget: has active extraction station or colony' : 'Forget galaxy'}
+              disabled={hasMiningStation || hasColony}
               onClick={(e) => { e.stopPropagation(); onDeleteGalaxy(superclusterSeed, galaxy.galaxySeed); }}
             >✕</button>
           ) : (
             <button
               className="codex-travel-btn"
               title="Travel to galaxy"
-              onClick={(e) => { e.stopPropagation(); onNavigate(() => travelToGalaxy(superclusterSeed, superclusterName, galaxy.galaxySeed, galaxy.galaxyName)); }}
+              onClick={(e) => { e.stopPropagation(); onNavigate(() => canTravelToGalaxy(superclusterSeed, galaxy.galaxySeed), () => travelToGalaxy(superclusterSeed, superclusterName, galaxy.galaxySeed, galaxy.galaxyName)); }}
             >⊙</button>
           )}
         </div>
@@ -530,14 +599,15 @@ function SystemEntry({ system, query, superclusterSeed, superclusterName, galaxy
           {deleteMode ? (
             <button
               className="codex-delete-btn"
-              title="Forget system"
+              title={hasMiningStation || hasColony ? 'Cannot forget: has active extraction station or colony' : 'Forget system'}
+              disabled={hasMiningStation || hasColony}
               onClick={(e) => { e.stopPropagation(); onDeleteSystem(superclusterSeed, galaxySeed, system.id); }}
             >✕</button>
           ) : (
             <button
               className="codex-travel-btn"
               title="Travel to system"
-              onClick={(e) => { e.stopPropagation(); onNavigate(() => travelToSystem(superclusterSeed, superclusterName, galaxySeed, galaxyName, system.id, system.name)); }}
+              onClick={(e) => { e.stopPropagation(); onNavigate(() => canTravelToSystem(superclusterSeed, galaxySeed, system.id), () => travelToSystem(superclusterSeed, superclusterName, galaxySeed, galaxyName, system.id, system.name)); }}
             >⊙</button>
           )}
         </div>

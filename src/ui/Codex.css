@@ -506,3 +506,13 @@
   color: #ff6666;
   background: rgba(180, 40, 40, 0.2);
 }
+
+.codex-delete-btn:disabled {
+  color: #555;
+  cursor: not-allowed;
+}
+
+.codex-delete-btn:disabled:hover {
+  color: #555;
+  background: none;
+}

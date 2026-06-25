@@ -2,13 +2,13 @@ import milkyway from './data/milkyway.json';
 import laniakea from './data/laniakea.json';
 import solSystem from './data/sol-system.json';
 import type { StarType, ZoneType, Planet, AddressComponent } from './types';
-import type { SystemLayout, PlanetLayout, MoonLayout } from './planetGen';
+import type { SystemLayout, PlanetLayout } from './planetGen';
 
 export const MILKY_WAY_SEED: number = milkyway.galaxySeed;
-export const LANIAKEA_SEED: number = laniakea.superclusiterSeed;
+export const LANIAKEA_SEED: number = laniakea.superclusterSeed;
 
 export const MILKY_WAY_NAME: string = milkyway.galaxyName;
-export const LANIAKEA_NAME: string = laniakea.superclusiterName;
+export const LANIAKEA_NAME: string = laniakea.superclusterName;
 
 export const NEARBY_SYSTEMS_DATA = milkyway.systems as Array<{
   id: number; x: number; y: number; name: string;
@@ -19,6 +19,7 @@ export const LANIAKEA_ATTRACTOR_NAMES: string[] = laniakea.attractorNames as str
 export const VIRGO_ATTRACTOR_NAME: string = LANIAKEA_ATTRACTOR_NAMES[0];
 export const MW_DOT_OFFSET: [number, number] = [laniakea.milkyWayDotOffsetX, laniakea.milkyWayDotOffsetY];
 
+export const MILKY_WAY_NUM_ARMS: number = milkyway.numArms;
 export const MILKY_WAY_NEBULA_COLOR_INDEX: number = milkyway.nebulaColorIndex;
 export const MILKY_WAY_INNER_NEBULA_COLOR_INDEX: number = milkyway.innerNebulaColorIndex;
 

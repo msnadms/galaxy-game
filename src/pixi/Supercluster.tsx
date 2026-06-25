@@ -9,6 +9,7 @@ import { useCodexStore } from '../store/codexStore';
 import { buildAddressComponent, type SuperclusterDot } from '../game/types';
 import { useCamera } from './useCamera';
 import { SC_CAMERA_INITIAL_SCALE, SC_WORLD_HALF, SC_WORLD_HALF_MLY, OBS_UNIVERSE_RADIUS } from '../game/constants';
+import { MSG_DRIVE_REQUIRED_GALAXY } from '../ui/strings';
 import { animateZoomTo } from './zoomAnim';
 import { useZoomController } from './useZoomController';
 import { ScaleBar } from './ScaleBar';
@@ -207,7 +208,7 @@ export function SuperclusterWorld() {
       gfx.moveTo(x - nub, y + arm).lineTo(x + nub, y + arm);
       gfx.stroke({ color: 0x00e8ff, width: 1.5, alpha: 0.65 });
     }
-  }, [scDots]);
+  }, [scDots, isInitialised]);
 
   useEffect(() => {
     if (!isInitialised || !worldRef.current) return;
@@ -264,7 +265,14 @@ export function SuperclusterWorld() {
       const isCurrent = nearest.seed === currentGalaxySeed;
       const currentDot = sc.dots.find(d => d.seed === currentGalaxySeed);
       const travelDist = Math.hypot(nearest.x - (currentDot?.x ?? 0), nearest.y - (currentDot?.y ?? 0));
-      if (!isCurrent && !trySpendTravelCost(superclusterTravelCost(travelDist))) return;
+      if (!isCurrent) {
+        const { driveA, triggerHudNotify } = useUIStore.getState();
+        if (driveA < 1) {
+          triggerHudNotify(MSG_DRIVE_REQUIRED_GALAXY);
+          return;
+        }
+        if (!trySpendTravelCost(superclusterTravelCost(travelDist))) return;
+      }
 
       markDotVisited(nearest.seed);
       useCodexStore.getState().addGalaxyRecord(sc.seed, sc.name, nearest.seed, nearest.name);

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { PixiApp } from './pixi/PixiApp';
 import { ConfigPanel } from './ui/ConfigPanel';
 import { useUIStore } from './store/uiStore';
@@ -10,11 +10,17 @@ import { ShipHUD } from './ui/ShipHUD';
 import { PlanetPanel } from './ui/PlanetPanel';
 import { useSettingsPersist } from './hooks/useSettingsPersist';
 import { useQuestPersist } from './hooks/useQuestPersist';
-import { initAuth } from './store/authStore';
+import { initAuth, useAuthStore } from './store/authStore';
 import { InfoPanel } from './ui/InfoPanel';
 import { BootSequence } from './ui/BootSequence';
+import { LoginScreen } from './ui/LoginScreen';
 
 const COORD_TYPES = new Set(['supercluster', 'galaxy', 'system']);
+
+const GalaxyTitle = memo(function GalaxyTitle() {
+  const galaxySeed = useGameStore((s) => s.galaxy.seed);
+  return <div className="galaxy-title">{generateGalaxyName(galaxySeed)}</div>;
+});
 
 function AddressBar() {
   const address = useUIStore((s) => s.address);
@@ -43,9 +49,10 @@ export default function App() {
   useSettingsPersist();
   useQuestPersist();
   useEffect(() => initAuth(), []);
+  const user = useAuthStore((s) => s.user);
+  const authLoading = useAuthStore((s) => s.loading);
   const view = useUIStore((s) => s.view);
   const showHUD = useUIStore((s) => s.showHUD);
-  const galaxySeed = useGameStore((s) => s.galaxy.seed);
   const [infoOpen, setInfoOpen] = useState(false);
   const [showBoot] = useState(true);
   const [isFirstVisit] = useState(() => {
@@ -58,6 +65,8 @@ export default function App() {
   const handleBootComplete = useCallback(() => {
     if (isFirstVisit) setInfoPanelOpenReq(r => r + 1);
   }, [isFirstVisit]);
+
+  if (authLoading || !user) return <LoginScreen />;
 
   return (
     <div className="app">
@@ -76,9 +85,7 @@ export default function App() {
         </div>
       )}
       {showHUD && <AddressBar />}
-      {view === 'galaxy' && (
-        <div className="galaxy-title">{generateGalaxyName(galaxySeed)}</div>
-      )}
+      {view === 'galaxy' && <GalaxyTitle />}
       {view === 'system' && <PlanetPanel />}
     </div>
   );

@@ -12,6 +12,7 @@ import { useGameStore } from './gameStore';
 import { useExtractorStore } from './extractorStore';
 import { useSettlementStore } from './settlementStore';
 import { useQuestStore } from './questStore';
+import { loadNav } from '../lib/navLocalStorage';
 
 interface AuthState {
   user: User | null;
@@ -37,13 +38,26 @@ export const useAuthStore = create<AuthState>()(() => ({
 export function initAuth(): () => void {
   return onAuthStateChanged(auth, async (user) => {
     if (user) {
-      const [settings, discoveries, extractors, settlements, quests] = await Promise.all([
+      const [baseSettings, discoveries, extractors, settlements, quests] = await Promise.all([
         initUserDoc(user),
         loadAllDiscoveries(user.uid),
         loadAllExtractors(user.uid),
         loadAllSettlements(user.uid),
         loadQuests(user.uid),
       ]);
+      // localStorage nav is more recent than Firebase's debounced write — prefer
+      // it for galaxy/system/view when the entry is fresh (< 30s old).
+      const localNav = loadNav(user.uid);
+      const settings = localNav
+        ? {
+            ...baseSettings,
+            lastView: localNav.lastView,
+            lastSuperclusterSeed: localNav.lastSuperclusterSeed,
+            lastGalaxySeed: localNav.lastGalaxySeed,
+            lastSystemId: localNav.lastSystemId,
+            address: localNav.address,
+          }
+        : baseSettings;
       const cap = computeStorageCap(settings.storageA);
       useUIStore.setState({
         showOrbitRings: settings.showOrbitRings,

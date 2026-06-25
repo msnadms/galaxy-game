@@ -169,3 +169,4 @@ export const CAMERA_ZOOM_FACTOR = 1.12;
 // Pointer must move more than this many pixels before a press is treated as a
 // drag rather than a click.
 export const DRAG_THRESHOLD_PX = 4;
+

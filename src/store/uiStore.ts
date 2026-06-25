@@ -80,6 +80,9 @@ interface UIState {
   toggleInfiniteExplore: () => void;
   hudFlash: number;
   triggerHudFlash: () => void;
+  hudNotify: number;
+  hudNotifyMsg: string;
+  triggerHudNotify: (msg: string) => void;
   view: AppView;
   setView: (view: AppView) => void;
   viewTransitioning: boolean;
@@ -174,6 +177,9 @@ export const useUIStore = create<UIState>((set, get) => ({
   toggleInfiniteExplore: () => set((s) => ({ infiniteExplore: !s.infiniteExplore })),
   hudFlash: 0,
   triggerHudFlash: () => set((s) => ({ hudFlash: s.hudFlash + 1 })),
+  hudNotify: 0,
+  hudNotifyMsg: '',
+  triggerHudNotify: (msg) => set((s) => ({ hudNotify: s.hudNotify + 1, hudNotifyMsg: msg })),
   view: 'system',
   setView: (view) => set({ view }),
   viewTransitioning: false,

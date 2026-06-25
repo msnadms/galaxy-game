@@ -120,7 +120,7 @@ function lerp(start: number, end: number, t: number) {
 
 
 
-export function generateGalaxy(seed = Date.now()): Galaxy {
+export function generateGalaxy(seed = Date.now(), overrides?: { numArms?: number }): Galaxy {
   const rng = createRng(seed);
   const positions: [number, number][] = [];
   const armIndices: (number | null)[] = [];
@@ -128,7 +128,7 @@ export function generateGalaxy(seed = Date.now()): Galaxy {
   const isDiskStar: boolean[] = [];
   const isBrownDwarf: boolean[] = [];
   const isNeutronStar: boolean[] = [];
-  const config = new GalaxyConfig(rng);
+  const config = new GalaxyConfig(rng, overrides);
 
   for (let i = 0; i < config.numStars; i++) {
     let x: number, y: number;

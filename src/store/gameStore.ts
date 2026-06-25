@@ -4,7 +4,7 @@ import { generateGalaxy } from '../game/galaxyGen';
 import { generateSupercluster } from '../game/superclusters';
 import { generateSystemLayout, generatePlanets } from '../game/planetGen';
 import { useQuestStore } from './questStore';
-import { MILKY_WAY_SEED, LANIAKEA_SEED } from '../game/hardcoded';
+import { MILKY_WAY_SEED, MILKY_WAY_NUM_ARMS, LANIAKEA_SEED } from '../game/hardcoded';
 
 interface GameState {
   galaxy: Galaxy;
@@ -24,6 +24,11 @@ interface GameState {
   ) => void;
 }
 
+function makeGalaxy(seed?: number): Galaxy {
+  const s = seed ?? Date.now();
+  return generateGalaxy(s, s === MILKY_WAY_SEED ? { numArms: MILKY_WAY_NUM_ARMS } : undefined);
+}
+
 function applyVisited(galaxy: Galaxy, visited: Set<number> | undefined): Galaxy {
   if (!visited || visited.size === 0) return galaxy;
   return {
@@ -41,7 +46,7 @@ function applyVisitedDots(sc: SuperclusterData, visitedSeeds: Set<number> | unde
 }
 
 const _initialGalaxy = (() => {
-  const g = generateGalaxy(MILKY_WAY_SEED);
+  const g = makeGalaxy(MILKY_WAY_SEED);
   return { ...g, systems: g.systems.map((s) => s.id === 0 ? { ...s, visited: true, current: true } : s) };
 })();
 
@@ -62,7 +67,7 @@ export const useGameStore = create<GameState>((set) => ({
   visitedSystemsByGalaxySeed: { [MILKY_WAY_SEED]: new Set([0]) },
   visitedGalaxyBySuperclusterSeed: { [LANIAKEA_SEED]: new Set([MILKY_WAY_SEED]) },
   regenerateGalaxy: (seed) => set((state) => {
-    const galaxy = generateGalaxy(seed);
+    const galaxy = makeGalaxy(seed);
     return {
       galaxy: applyVisited(galaxy, state.visitedSystemsByGalaxySeed[galaxy.seed]),
       system: null,
@@ -93,7 +98,7 @@ export const useGameStore = create<GameState>((set) => ({
     }
   },
   restoreGalaxyAndSystem: (galaxySeed, systemId) => set((state) => {
-    const baseGalaxy = state.galaxy.seed === galaxySeed ? state.galaxy : generateGalaxy(galaxySeed);
+    const baseGalaxy = state.galaxy.seed === galaxySeed ? state.galaxy : makeGalaxy(galaxySeed);
     const visitedIds = state.visitedSystemsByGalaxySeed[baseGalaxy.seed];
     const updatedGalaxy = {
       ...baseGalaxy,

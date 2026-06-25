@@ -10,9 +10,9 @@ export class GalaxyConfig {
     nebulaColors: number[];
     baseAngleOffset: number;
 
-    constructor(rng: Rng) {
+    constructor(rng: Rng, overrides?: { numArms?: number }) {
         const randInt = (bound: number) => Math.floor(rng() * bound);
-        this.numArms = randInt(4) + 2; // 2 to 5
+        this.numArms = overrides?.numArms ?? (randInt(4) + 2); // 2 to 5
         this.galaxyEllipse = rng() * 0.25 + 0.75 // 0.75 to 1
         this.spiralTwist = SPIRAL_TWISTS[this.numArms] ?? 2.0;
         this.numStars = randInt(300) + 400; // 300 to 700
