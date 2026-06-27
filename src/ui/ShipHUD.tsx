@@ -44,6 +44,16 @@ const StatBar = memo(function StatBar({ value, max }: { value: number; max: numb
   );
 });
 
+const DetectionBars = memo(function DetectionBars({ value }: { value: number }) {
+  return (
+    <div className="detection-bars">
+      {Array.from({ length: 5 }, (_, i) => (
+        <div key={i} className={`detection-bar${i < value ? ' detection-bar-filled' : ''}`} />
+      ))}
+    </div>
+  );
+});
+
 const VerticalCargoBar = memo(function VerticalCargoBar({ icon, label, value, max }: { icon: ReactNode; label: string; value: number; max: number }) {
   const pct = Math.min((value / max) * 100, 100);
   const low = pct < 25;
@@ -238,7 +248,7 @@ const UpgradesButton = memo(function UpgradesButton() {
 
 export function ShipHUD() {
   const exoticMatter = useUIStore((s) => s.exoticMatter);
-  const driveIntegrity = useUIStore((s) => s.driveIntegrity);
+  const detectionRating = useUIStore((s) => s.detectionRating);
   const railgunAmmo = useUIStore((s) => s.railgunAmmo);
   const helium3Reserves = useUIStore((s) => s.helium3Reserves);
   const alloys = useUIStore((s) => s.alloys);
@@ -314,15 +324,15 @@ export function ShipHUD() {
           </div>
 
           <div className="hud-row">
-            <span className="hud-label">ALCUBIERRE DRIVE</span>
-            <StatBar value={driveIntegrity} max={100} />
-            <span className="hud-value">{driveIntegrity}%</span>
-          </div>
-
-          <div className="hud-row">
             <span className="hud-label">RAILGUN RESERVES</span>
             <StatBar value={railgunAmmo} max={weaponCap} />
             <span className="hud-value">{fmt(railgunAmmo)} <span className="hud-value-dim">/ {fmt(weaponCap)}</span></span>
+          </div>
+
+          <div className="hud-row">
+            <span className="hud-label">DETECTION RATING</span>
+            <DetectionBars value={detectionRating} />
+            <span className="hud-value">{detectionRating} <span className="hud-value-dim">/ 5</span></span>
           </div>
         </div>
 

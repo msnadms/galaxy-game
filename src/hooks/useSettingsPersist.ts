@@ -37,7 +37,7 @@ export function useSettingsPersist() {
           showHUD: s.showHUD,
           infiniteExplore: s.infiniteExplore,
           exoticMatter: s.exoticMatter,
-          driveIntegrity: s.driveIntegrity,
+          detectionRating: s.detectionRating,
           railgunAmmo: s.railgunAmmo,
           helium3Reserves: s.helium3Reserves,
           alloys: s.alloys,

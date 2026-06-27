@@ -22,7 +22,7 @@ export function LoginScreen() {
   return (
     <div className="login-overlay">
       <div className="login-panel">
-        <div className="login-title">EPHAPSE-CLASS WARPSHIP | {SHIP_NAME}</div>
+        <div className="login-title">EPHAPSE-CLASS WARP CRUISER | {SHIP_NAME}</div>
         <div className="login-divider" />
         {busy ? (
           <div className="login-status">Authenticating<span className="login-ellipsis" /></div>

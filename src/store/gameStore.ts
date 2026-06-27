@@ -4,6 +4,7 @@ import { generateGalaxy } from '../game/galaxyGen';
 import { generateSupercluster } from '../game/superclusters';
 import { generateSystemLayout, generatePlanets } from '../game/planetGen';
 import { useQuestStore } from './questStore';
+import { useUIStore } from './uiStore';
 import { MILKY_WAY_SEED, MILKY_WAY_NUM_ARMS, LANIAKEA_SEED } from '../game/hardcoded';
 
 interface GameState {
@@ -67,6 +68,7 @@ export const useGameStore = create<GameState>((set) => ({
   visitedSystemsByGalaxySeed: { [MILKY_WAY_SEED]: new Set([0]) },
   visitedGalaxyBySuperclusterSeed: { [LANIAKEA_SEED]: new Set([MILKY_WAY_SEED]) },
   regenerateGalaxy: (seed) => set((state) => {
+    useUIStore.getState().raiseDetection(0.25);
     const galaxy = makeGalaxy(seed);
     return {
       galaxy: applyVisited(galaxy, state.visitedSystemsByGalaxySeed[galaxy.seed]),
@@ -74,8 +76,9 @@ export const useGameStore = create<GameState>((set) => ({
     };
   }),
   regenerateSupercluster: (seed) => set((state) => {
-    if (seed !== undefined && seed !== state.supercluster.seed) {
+    if (seed === undefined || seed !== state.supercluster.seed) {
       useQuestStore.getState().completeQuest('new_supercluster');
+      useUIStore.getState().raiseDetection(1.0);
     }
     if (seed === state.supercluster.seed) {
       return { supercluster: applyVisitedDots(state.supercluster, state.visitedGalaxyBySuperclusterSeed[state.supercluster.seed]) };
@@ -92,6 +95,7 @@ export const useGameStore = create<GameState>((set) => ({
       const q = useQuestStore.getState();
       q.completeQuest('first_system');
       if (layout.planets.some((p) => p.zone === 'habitable')) q.completeQuest('first_habitable');
+      useUIStore.getState().raiseDetection(0.1);
       set({ system: { ...system, planets } });
     } else {
       set({ system: null });

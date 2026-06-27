@@ -10,7 +10,7 @@ export interface UserSettings {
   showHUD: boolean;
   infiniteExplore: boolean;
   exoticMatter: number;
-  driveIntegrity: number;
+  detectionRating: number;
   railgunAmmo: number;
   helium3Reserves: number;
   alloys: number;
@@ -38,7 +38,7 @@ const defaultSettings: UserSettings = {
   showHUD: true,
   infiniteExplore: false,
   exoticMatter: 75,
-  driveIntegrity: 98,
+  detectionRating: 0,
   railgunAmmo: 20,
   helium3Reserves: 220,
   alloys: 400,

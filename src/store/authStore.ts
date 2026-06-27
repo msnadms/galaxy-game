@@ -65,7 +65,7 @@ export function initAuth(): () => void {
         showHUD: settings.showHUD,
         infiniteExplore: settings.infiniteExplore,
         exoticMatter: Math.min(settings.exoticMatter, cap),
-        driveIntegrity: settings.driveIntegrity,
+        detectionRating: settings.detectionRating,
         railgunAmmo: settings.railgunAmmo,
         helium3Reserves: Math.min(settings.helium3Reserves, cap),
         alloys: Math.min(settings.alloys, cap),

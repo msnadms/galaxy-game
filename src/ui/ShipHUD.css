@@ -65,6 +65,23 @@
   box-shadow: 0 0 6px rgba(187, 68, 0, 0.7);
 }
 
+.detection-bars {
+  display: flex;
+  gap: 3px;
+  flex: 1;
+}
+
+.detection-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(187, 0, 0, 0.12);
+}
+
+.detection-bar-filled {
+  background: #cc1100;
+  box-shadow: 0 0 5px rgba(204, 17, 0, 0.8);
+}
+
 .hud-value {
   font-size: 13px;
   font-family: monospace;

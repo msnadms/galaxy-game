@@ -9,7 +9,7 @@ export type AppView = 'system' | 'galaxy' | 'supercluster';
 export const UPGRADE_POOL = 5;
 
 const STORAGE_BASE = 500;
-export const STORAGE_A_BONUS = [0, 600, 1500, 2000, 3000]; 
+export const STORAGE_A_BONUS = [0, 500, 1500, 2000, 3000]; 
 export function computeStorageCap(a: number): number {
   return STORAGE_BASE + STORAGE_A_BONUS[a];
 }
@@ -60,17 +60,18 @@ interface UIState {
   showScanlines: boolean;
   toggleScanlines: () => void;
   exoticMatter: number;
-  driveIntegrity: number;
+  detectionRating: number;
   railgunAmmo: number;
   helium3Reserves: number;
   alloys: number;
   nutrients: number;
   metallicHydrogen: number;
   neutronStarMatter: number;
+  raiseDetection: (chance: number) => void;
   addCargo: (type: Resource['type'], amount: number) => void;
   selectedPlanetKey: string | null;
   setSelectedPlanet: (key: string | null) => void;
-  setShipStats: (stats: { exoticMatter: number; driveIntegrity: number; railgunAmmo: number; helium3Reserves: number }) => void;
+  setShipStats: (stats: { exoticMatter: number; detectionRating: number; railgunAmmo: number; helium3Reserves: number }) => void;
   consumeExoticMatter: (amount: number) => void;
   consumeHelium3: (amount: number) => void;
   spendAlloys: (amount: number) => void;
@@ -144,6 +145,9 @@ export const useUIStore = create<UIState>((set, get) => ({
   nutrients: 0,
   metallicHydrogen: 0,
   neutronStarMatter: 0,
+  raiseDetection: (chance) => {
+    if (Math.random() < chance) set((s) => ({ detectionRating: Math.min(5, s.detectionRating + 1) }));
+  },
   addCargo: (type, amount) => set((s) => {
     if (type === 'exotic') {
       useQuestStore.getState().completeQuest('first_exotic');
@@ -160,7 +164,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   selectedPlanetKey: null,
   setSelectedPlanet: (key) => set({ selectedPlanetKey: key }),
   exoticMatter: 250,
-  driveIntegrity: 98,
+  detectionRating: 0,
   railgunAmmo: 20,
   helium3Reserves: 200,
   setShipStats: (stats) => set(stats),
