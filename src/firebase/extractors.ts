@@ -1,34 +1,46 @@
-import { collection, doc, setDoc, updateDoc, getDocs, deleteDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import type { Extractor } from '../game/types';
 
 export async function saveExtractor(uid: string, extractor: Extractor): Promise<void> {
   const ref = doc(db, 'users', uid, 'extractors', extractor.key);
-  await setDoc(ref, {
-    galaxySeed: extractor.galaxySeed,
-    systemId: extractor.systemId,
-    systemName: extractor.systemName,
-    planetName: extractor.planetName,
-    resourceType: extractor.resourceType,
-    rate: extractor.rate,
-    placedAt: extractor.placedAt,
-    lastCollectedAt: extractor.lastCollectedAt,
-    systemX: extractor.systemX,
-    systemY: extractor.systemY,
-    galaxyX: extractor.galaxyX,
-    galaxyY: extractor.galaxyY,
-    superclusSeed: extractor.superclusSeed,
-  }, { merge: true });
+  try {
+    await setDoc(ref, {
+      galaxySeed: extractor.galaxySeed,
+      systemId: extractor.systemId,
+      systemName: extractor.systemName,
+      planetName: extractor.planetName,
+      resourceType: extractor.resourceType,
+      rate: extractor.rate,
+      placedAt: extractor.placedAt,
+      lastCollectedAt: extractor.lastCollectedAt,
+      systemX: extractor.systemX,
+      systemY: extractor.systemY,
+      galaxyX: extractor.galaxyX,
+      galaxyY: extractor.galaxyY,
+      superclusSeed: extractor.superclusSeed,
+    }, { merge: true });
+  } catch (err) {
+    console.error('saveExtractor failed:', err);
+  }
 }
 
 export async function updateExtractorCollected(uid: string, key: string, lastCollectedAt: number): Promise<void> {
   const ref = doc(db, 'users', uid, 'extractors', key);
-  await updateDoc(ref, { lastCollectedAt });
+  try {
+    await setDoc(ref, { lastCollectedAt }, { merge: true });
+  } catch (err) {
+    console.error('updateExtractorCollected failed:', err);
+  }
 }
 
 export async function deleteExtractor(uid: string, key: string): Promise<void> {
   const ref = doc(db, 'users', uid, 'extractors', key);
-  await deleteDoc(ref);
+  try {
+    await deleteDoc(ref);
+  } catch (err) {
+    console.error('deleteExtractor failed:', err);
+  }
 }
 
 export async function loadAllExtractors(uid: string): Promise<Extractor[]> {

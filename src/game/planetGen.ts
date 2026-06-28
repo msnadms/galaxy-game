@@ -92,7 +92,7 @@ export function generateSystemLayout(seed: number, starType?: StarType): SystemL
 
     const moons: MoonLayout[] = [];
     if (hasMoon) {
-      const numMoons = Math.ceil(rng() * cfg.maxMoons);
+      const numMoons = Math.floor(rng() * cfg.maxMoons) + 1;
       for (let m = 0; m < numMoons; m++) {
         const dist = radius * 2.5 + Math.floor(rng() * 50) + 45 * (m + 1);
         const moonAngle = rng() * Math.PI * 2;

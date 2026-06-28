@@ -227,12 +227,12 @@ export function GalaxyWorld() {
     return () => {
       Ticker.shared.remove(tick);
       world.removeChild(nebulaContainer);
+      nebulaContainer.destroy({ children: true });
       nebulaBlur.destroy();
       coreBlur.destroy();
-      nebulaContainer.destroy({ children: true });
       disp.destroy();
     };
-  }, [galaxySeed, config, app, isInitialised]);
+  }, [galaxySeed, config, isInitialised]);
 
   return (
     <>

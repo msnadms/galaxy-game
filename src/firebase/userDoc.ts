@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { type User } from 'firebase/auth';
 import { db } from './firebase';
 import { MILKY_WAY_SEED, LANIAKEA_SEED, DEFAULT_ADDRESS } from '../game/hardcoded';
@@ -83,5 +83,9 @@ export async function initUserDoc(user: User): Promise<UserSettings> {
 
 export async function saveUserSettings(uid: string, settings: UserSettings): Promise<void> {
   const ref = doc(db, 'users', uid);
-  await updateDoc(ref, { settings });
+  try {
+    await setDoc(ref, { settings }, { merge: true });
+  } catch (err) {
+    console.error('saveUserSettings failed:', err);
+  }
 }

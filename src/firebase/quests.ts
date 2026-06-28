@@ -12,5 +12,9 @@ export async function loadQuests(uid: string): Promise<CompletedQuests> {
 }
 
 export async function markQuestComplete(uid: string, id: QuestId): Promise<void> {
-  await setDoc(questRef(uid), { [id]: true }, { merge: true });
+  try {
+    await setDoc(questRef(uid), { [id]: true }, { merge: true });
+  } catch (err) {
+    console.error('markQuestComplete failed:', err);
+  }
 }

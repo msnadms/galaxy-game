@@ -16,5 +16,5 @@ export const useQuestStore = create<QuestState>((set, get) => ({
     set((s) => ({ completed: { ...s.completed, [id]: true } }));
     return true;
   },
-  restoreQuests: (data) => set({ completed: data }),
+  restoreQuests: (data) => set((s) => ({ completed: { ...s.completed, ...data } })),
 }));

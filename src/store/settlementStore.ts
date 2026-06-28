@@ -57,15 +57,19 @@ export const useSettlementStore = create<SettlementState>()(
     },
 
     unlockColonySlot: (key) => {
-      const cs = get().colonyStates[key] ?? { slots: [makeEmptyColonySlot()] };
-      if (cs.slots.length >= MAX_COLONY_SLOTS) return false;
-      set((s) => ({
-        colonyStates: {
-          ...s.colonyStates,
-          [key]: { ...cs, slots: [...cs.slots, makeEmptyColonySlot()] },
-        },
-      }));
-      return true;
+      let unlocked = false;
+      set((s) => {
+        const cs = s.colonyStates[key] ?? { slots: [makeEmptyColonySlot()] };
+        if (cs.slots.length >= MAX_COLONY_SLOTS) return s;
+        unlocked = true;
+        return {
+          colonyStates: {
+            ...s.colonyStates,
+            [key]: { ...cs, slots: [...cs.slots, makeEmptyColonySlot()] },
+          },
+        };
+      });
+      return unlocked;
     },
 
     feedColony: (key, pool) => {

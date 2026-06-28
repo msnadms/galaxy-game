@@ -152,19 +152,19 @@ export const useUIStore = create<UIState>((set, get) => ({
   raiseDetection: (chance) => {
     if (Math.random() < chance) set((s) => ({ detectionRating: Math.min(5, s.detectionRating + 1) }));
   },
-  addCargo: (type, amount) => set((s) => {
-    if (type === 'exotic') {
-      useQuestStore.getState().completeQuest('first_exotic');
-      return { exoticMatter: Math.min(computeStorageCap(s.storageA), s.exoticMatter + amount) };
-    }
-    const cap = computeStorageCap(s.storageA);
-    if (type === 'helium-3') return { helium3Reserves: Math.min(cap, s.helium3Reserves + amount) };
-    if (type === 'alloys') return { alloys: Math.min(cap, s.alloys + amount) };
-    if (type === 'nutrients') return { nutrients: Math.min(cap, s.nutrients + amount) };
-    if (type === 'metallicHydrogen') return { metallicHydrogen: Math.min(cap, s.metallicHydrogen + amount) };
-    if (type === 'neutronStarMatter') return { neutronStarMatter: Math.min(cap, s.neutronStarMatter + amount) };
-    return {};
-  }),
+  addCargo: (type, amount) => {
+    if (type === 'exotic') useQuestStore.getState().completeQuest('first_exotic');
+    set((s) => {
+      const cap = computeStorageCap(s.storageA);
+      if (type === 'exotic') return { exoticMatter: Math.min(cap, s.exoticMatter + amount) };
+      if (type === 'helium-3') return { helium3Reserves: Math.min(cap, s.helium3Reserves + amount) };
+      if (type === 'alloys') return { alloys: Math.min(cap, s.alloys + amount) };
+      if (type === 'nutrients') return { nutrients: Math.min(cap, s.nutrients + amount) };
+      if (type === 'metallicHydrogen') return { metallicHydrogen: Math.min(cap, s.metallicHydrogen + amount) };
+      if (type === 'neutronStarMatter') return { neutronStarMatter: Math.min(cap, s.neutronStarMatter + amount) };
+      return {};
+    });
+  },
   selectedPlanetKey: null,
   setSelectedPlanet: (key) => set({ selectedPlanetKey: key }),
   exoticMatter: 250,

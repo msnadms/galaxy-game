@@ -5,28 +5,40 @@ import { makeEmptyColonySlot } from '../game/types';
 
 export async function saveSettlement(uid: string, settlement: Settlement): Promise<void> {
   const ref = doc(db, 'users', uid, 'settlements', settlement.key);
-  await setDoc(ref, {
-    galaxySeed: settlement.galaxySeed,
-    systemId: settlement.systemId,
-    systemName: settlement.systemName,
-    planetName: settlement.planetName,
-    settledAt: settlement.settledAt,
-    systemX: settlement.systemX,
-    systemY: settlement.systemY,
-    galaxyX: settlement.galaxyX,
-    galaxyY: settlement.galaxyY,
-    superclusSeed: settlement.superclusSeed,
-  }, { merge: true });
+  try {
+    await setDoc(ref, {
+      galaxySeed: settlement.galaxySeed,
+      systemId: settlement.systemId,
+      systemName: settlement.systemName,
+      planetName: settlement.planetName,
+      settledAt: settlement.settledAt,
+      systemX: settlement.systemX,
+      systemY: settlement.systemY,
+      galaxyX: settlement.galaxyX,
+      galaxyY: settlement.galaxyY,
+      superclusSeed: settlement.superclusSeed,
+    }, { merge: true });
+  } catch (err) {
+    console.error('saveSettlement failed:', err);
+  }
 }
 
 export async function saveColonyState(uid: string, settlementKey: string, state: ColonyState): Promise<void> {
   const ref = doc(db, 'users', uid, 'settlements', settlementKey);
-  await setDoc(ref, { slots: state.slots }, { merge: true });
+  try {
+    await setDoc(ref, { slots: state.slots }, { merge: true });
+  } catch (err) {
+    console.error('saveColonyState failed:', err);
+  }
 }
 
 export async function deleteSettlement(uid: string, key: string): Promise<void> {
   const ref = doc(db, 'users', uid, 'settlements', key);
-  await deleteDoc(ref);
+  try {
+    await deleteDoc(ref);
+  } catch (err) {
+    console.error('deleteSettlement failed:', err);
+  }
 }
 
 export async function loadAllSettlements(uid: string): Promise<{

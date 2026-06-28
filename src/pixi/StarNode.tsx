@@ -1,4 +1,4 @@
-import { memo, useMemo, useEffect, useCallback } from 'react';
+import { memo, useMemo, useEffect, useCallback, useRef } from 'react';
 import { Circle, Graphics } from 'pixi.js';
 import type { StarSystem } from '../game/types';
 import { createStarTexture } from './textures';
@@ -20,11 +20,13 @@ export const StarNode = memo(function StarNode({
 
   useEffect(() => () => { glowTexture.destroy(true); }, [glowTexture]);
 
+  const hitArea = useRef(new Circle(0, 0, 0));
+  hitArea.current.radius = system.size + 10;
+
   const drawRing = useCallback(
     (gfx: Graphics) => {
       gfx.clear();
       if (isVisited && !isCurrent) {
-        gfx.clear();
         gfx.circle(0, 0, system.size + 7);
         gfx.stroke({ color: 0xffffff, width: 1.5, alpha: 0.75 });
         gfx.circle(0, 0, system.size + 11);
@@ -51,7 +53,7 @@ export const StarNode = memo(function StarNode({
       y={system.y}
       eventMode="static"
       cursor="pointer"
-      hitArea={new Circle(0, 0, system.size + 10)}
+      hitArea={hitArea.current}
       onClick={handleClick}
     >
       <pixiSprite texture={glowTexture} anchor={0.5} scale={0.25} />

@@ -61,7 +61,7 @@ const DRIVE_B_NAMES = [
 ];
 const DRIVE_B_DESCS = [
   'The baseline He-3 fusion reactor. Fuses helion (He-3) nuclei to generate the raw power output driving the warp field generator.',
-  ' Dynamically tunes plasma injection timing and magnetic confinement geometry in real time.',
+  'Dynamically tunes plasma injection timing and magnetic confinement geometry in real time.',
   'Cools harvested helium to near-superfluid temperatures and exploits the mass difference between He-3 and He-4.',
   'Increases the energy extracted per fusion event through tighter magnetic confinement and higher plasma densities.',
   'Refines the fusion process toward He-3 + He-3 and He-3 + deuterium reactions, which release energy primarily as charged particles rather than free neutrons.',

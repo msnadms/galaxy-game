@@ -43,7 +43,7 @@ const SC_NAME_SUFFIXES = [
   ' Void', ' Basin', ' Overdensity', ' Bridge', ' Strand',
 ];
 
-function makeSupercusterName(rng: Rng): string {
+function makeSuperclusterName(rng: Rng): string {
   const primaryIdx = Math.floor(rng() * SC_NAME_ROOTS.length);
   const primary = SC_NAME_ROOTS[primaryIdx];
   const isCompound = rng() < 0.35;
@@ -113,7 +113,7 @@ function makeClusterName(rng: Rng): string {
 export function generateSupercluster(seed: number = Date.now()): SuperclusterData {
   const rng = createRng(seed);
 
-  let name = makeSupercusterName(rng);
+  let name = makeSuperclusterName(rng);
 
   const attractors: SuperclusterAttractor[] = [];
   for (let i = 0; i < SC_ATTRACTOR_COUNT; i++) {

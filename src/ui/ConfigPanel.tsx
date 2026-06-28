@@ -3,7 +3,6 @@ import { useUIStore } from '../store/uiStore';
 import './ConfigPanel.css';
 
 export function ConfigPanel({ hidden }: { hidden?: boolean }) {
-  if (hidden) return null;
   const [settingsExpanded, setSettingsExpanded] = useState(false);
   const [tutorialExpanded, setTutorialExpanded] = useState(false);
   const showAttractorLabels = useUIStore((s) => s.showAttractorLabels);
@@ -21,6 +20,8 @@ export function ConfigPanel({ hidden }: { hidden?: boolean }) {
   const infiniteExplore = useUIStore((s) => s.infiniteExplore);
   const toggleInfiniteExplore = useUIStore((s) => s.toggleInfiniteExplore);
   const view = useUIStore((s) => s.view);
+
+  if (hidden) return null;
 
   return (
     <div className="config-panel">

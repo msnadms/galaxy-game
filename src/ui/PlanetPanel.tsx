@@ -51,7 +51,7 @@ export function PlanetPanel() {
   const helium3Reserves = useUIStore((s) => s.helium3Reserves);
   const nutrients = useUIStore((s) => s.nutrients);
   const metallicHydrogen = useUIStore((s) => s.metallicHydrogen);
-  const neutronMatter = 0;
+  const neutronMatter = useUIStore((s) => s.neutronStarMatter);
   const system = useGameStore((s) => s.system);
   const galaxySeed = useGameStore((s) => s.galaxy.seed);
   const galaxy = useGameStore((s) => s.galaxy);

@@ -25,7 +25,7 @@ const TrapezoidOutline = ({ points = "1,0.1 0.39,0.1 0.05,1 0.65,1" }: { points?
 );
 
 const StatBar = memo(function StatBar({ value, max }: { value: number; max: number }) {
-  const pct = (value / max) * 100;
+  const pct = max > 0 ? (value / max) * 100 : 0;
   const low = pct < 25;
   return (
     <div className="hud-bar-track">
@@ -48,7 +48,7 @@ const DetectionBars = memo(function DetectionBars({ value }: { value: number }) 
 });
 
 const VerticalCargoBar = memo(function VerticalCargoBar({ icon, label, value, max }: { icon: ReactNode; label: string; value: number; max: number }) {
-  const pct = Math.min((value / max) * 100, 100);
+  const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
   const low = pct < 25;
   return (
     <div className="hud-vcargo-col" data-tooltip={label}>
@@ -208,7 +208,7 @@ export function ShipHUD() {
   }, [hudFlash]);
 
   return (
-    <div ref={hudRef} className="ship-hud" aria-hidden="true">
+    <div ref={hudRef} className="ship-hud">
       <Codex />
       <ShipUpgradePanel />
       <LogisticsSystem />

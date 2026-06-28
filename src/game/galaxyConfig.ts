@@ -15,7 +15,7 @@ export class GalaxyConfig {
         this.numArms = overrides?.numArms ?? (randInt(4) + 2); // 2 to 5
         this.galaxyEllipse = rng() * 0.25 + 0.75 // 0.75 to 1
         this.spiralTwist = SPIRAL_TWISTS[this.numArms] ?? 2.0;
-        this.numStars = randInt(300) + 400; // 300 to 700
+        this.numStars = randInt(300) + 400; // 400 to 699
         this.innerNebulaColors = INNER_NEBULA_COLORS[randInt(INNER_NEBULA_COLORS.length)];
         this.nebulaColors = NEBULA_COLORS[randInt(NEBULA_COLORS.length)];
         this.baseAngleOffset = 2 * Math.PI * rng();

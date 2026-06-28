@@ -470,6 +470,12 @@ function LogisticsModalInner({ onClose }: { onClose: () => void }) {
     }
   }, [claimPendingUpgrade, user]);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
   const [draftNodeKeys, setDraftNodeKeys] = useState<string[]>([]);
@@ -483,12 +489,20 @@ function LogisticsModalInner({ onClose }: { onClose: () => void }) {
     return () => clearInterval(id);
   }, []);
 
+  const driveA = useUIStore((s) => s.driveA);
+  const driveB = useUIStore((s) => s.driveB);
+
   const maxRoutes = logisticsA;
   const canAddRoute = routes.length < maxRoutes;
   const allExtractors = useMemo(() => Object.values(extractors), [extractors]);
   const allSettlements = useMemo(() => Object.values(settlements), [settlements]);
 
-  const projected = projectNodes(allExtractors, allSettlements, nodeEquipped);
+  // driveA/driveB subscriptions ensure cost display updates after drive upgrades
+  void driveA; void driveB;
+  const projected = useMemo(
+    () => projectNodes(allExtractors, allSettlements, nodeEquipped),
+    [allExtractors, allSettlements, nodeEquipped],
+  );
   const lastHoveredNode = lastHoveredNodeId
     ? projected.find((p) => p.nodeId === lastHoveredNodeId) ?? null
     : null;

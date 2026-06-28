@@ -29,12 +29,20 @@ export function BootSequence({ onComplete, isFirstVisit }: { onComplete: () => v
   useEffect(() => {
     let lineIdx = 0;
     let charIdx = 0;
-    let timer: ReturnType<typeof setTimeout>;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    let cancelled = false;
+
+    const addTimer = (fn: () => void, delay: number) => {
+      const id = setTimeout(() => { if (!cancelled) fn(); }, delay);
+      timers.push(id);
+      return id;
+    };
 
     const typeLines = (lines: string[], onDone: () => void) => {
       lineIdx = 0;
       charIdx = 0;
       const tick = () => {
+        if (cancelled) return;
         if (lineIdx >= lines.length) {
           onDone();
           return;
@@ -52,39 +60,43 @@ export function BootSequence({ onComplete, isFirstVisit }: { onComplete: () => v
         if (ci >= line.length) {
           lineIdx++;
           charIdx = 0;
-          timer = setTimeout(tick, LINE_PAUSE_MS);
+          addTimer(tick, LINE_PAUSE_MS);
         } else {
           const delay = line[ci - 1] === '.' && line[ci] === ' ' ? MID_PERIOD_MS : CHAR_MS;
-          timer = setTimeout(tick, delay);
+          addTimer(tick, delay);
         }
       };
       tick();
     };
 
     const startMain = () => {
+      if (cancelled) return;
       setPhase('main');
       setTyped([]);
       typeLines(LINES, () => {
-        timer = setTimeout(() => {
+        addTimer(() => {
           setExiting(true);
-          setTimeout(() => onCompleteRef.current(), FADE_MS);
+          addTimer(() => onCompleteRef.current(), FADE_MS);
         }, LINGER_MS);
       });
     };
 
     if (isFirstVisit) {
-      timer = setTimeout(() => {
+      addTimer(() => {
         typeLines(LINES_INIT, () => {
-          timer = setTimeout(() => {
-            timer = setTimeout(startMain, 300);
+          addTimer(() => {
+            addTimer(startMain, 300);
           }, CLEAR_PAUSE_MS);
         });
       }, 500);
     } else {
-      timer = setTimeout(startMain, 500);
+      addTimer(startMain, 500);
     }
 
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      for (const id of timers) clearTimeout(id);
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const activeLines = phase === 'init' ? LINES_INIT : LINES;
