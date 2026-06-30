@@ -80,7 +80,10 @@ Orbit radii grow by a factor of 1.55–2.2 per ring from a base of ~380–500 un
 ### Zustand stores
 
 - `gameStore` — holds the active `Galaxy`, `supercluster`, `system` (active `StarSystem | null`), `regenerateGalaxy(seed?)`, `setSystem(system)`, `markSystemVisited(id)` actions
-- `uiStore` — `view` (`'supercluster' | 'galaxy' | 'system'`), `showHyperlanes`, `showAttractorLabels`, `showOrbitRings`, address breadcrumb stack (`pushAddress`, `removeAddressType`)
+- `uiStore` — `view` (`'supercluster' | 'galaxy' | 'system'`), `showHyperlanes`, `showAttractorLabels`, `showOrbitRings`, address breadcrumb stack (`pushAddress`, `removeAddressType`); also owns ship resource state (`exoticMatter`, `helium3Reserves`, `alloys`, `nutrients`, `metallicHydrogen`, `neutronStarMatter`, `railgunAmmo`, `detectionRating`), upgrade tiers (`storageA/B`, `weaponA/B`, `driveA/B`, `logisticsA/B`) and the derived-cap helpers `computeStorageCap`, `computeWeaponCap`, `computeDriveMultiplier`, `computeLogisticsCap`
+- `extractorStore` — placed `Extractor`s keyed by `ExtractorKey`; `peekAccumulated`/`collectExtractor` derive accrued resources from elapsed time (`ACCUMULATION_RATE_PER_MS`) scaled by `storageB`/`logisticsB` tiers. Also owns the extractor-upgrade-module system: `ownedUpgrades` (inventory), `nodeEquipped` (per-extractor `[slot0, slot1]` upgrade ids, see `getExtractorMultipliers`), and `pendingUpgrades` (modules queued from colony production awaiting `claimPendingUpgrade`)
+- `settlementStore` — placed `Settlement`s and their `colonyStates` (per-colony production slots). `feedColony` drains a shared resource pool into each slot's recipe (`EXTRACTOR_UPGRADES` cost), starts a 24h production timer once costs are met, and returns completed items plus what it consumed so callers can deduct from the pool
+- `logisticsStore` — drone delivery `routes` (ordered lists of extractor/settlement keys). `computeRouteCost` charges a flat drive-tier-scaled dispatch fee plus per-hop travel cost (`hopCost`: free within a system, `galaxyTravelCost` within a galaxy, `superclusterTravelCost` across galaxies in the same supercluster, flat fallback otherwise). `dispatchRoute` pays the cost, collects accumulated resources up to remaining cargo + colony-recipe capacity, feeds colonies, and raises `detectionRating` (`willRaiseDetection`) when dispatching from a supercluster region with >4 undampened extractors
 
 ### Nebula color design
 
@@ -103,3 +106,37 @@ The top-level zoom level above individual galaxies. `Supercluster` wraps a `@pix
 - A `ScaleBar` converts world pixels to Million Light Years (`SC_WORLD_HALF_MLY / SC_WORLD_HALF`).
 
 **Navigation:** Tapping a dot (within `15 / camera.scale` px, only active at scale ≥ 0.5) marks it visited, calls `regenerateGalaxy(dot.seed)`, resolves the nearest attractor (within `SC_ATTRACTOR_LABEL_MAX_DIST`), pushes address breadcrumbs, and switches `view` to `'galaxy'`.
+
+### `TopNavBar.tsx`
+
+Purely decorative top-of-screen overlay (`aria-hidden`) — two angled SVG polylines (left/right) flanking a center notch, styled to match the HUD's cyan trapezoid line language. No state, no props.
+
+### `ShipHUD.tsx` — ship HUD overlay
+
+Bottom-of-screen HUD rendered as a fixed-position trapezoid panel (SVG outline + tick marks). Composed of small `memo`-wrapped subcomponents:
+
+- `StatBar` / `VerticalCargoBar` — horizontal and vertical fill bars for resource rows (exotic matter, helium-3, railgun ammo) and cargo (alloys/nutrients/metallic hydrogen/neutron star matter via `CargoIcons`); both go into a "low" visual state under 25% fill.
+- `DetectionBars` — 5-segment discrete meter (not a continuous bar) for `detectionRating`.
+- `NavBack` / `NavRegen` — trapezoid nav buttons; `NavBack` pops the view/address stack (`system → galaxy → supercluster`), `NavRegen` re-rolls the supercluster (cost-gated by `driveA`, see `travelCosts.ts`), both can trigger the Pixi `fireBackZoom`/`fireCodexNavigate` transition animations.
+- `LogisticsSystem` — owns the open/closed state for the drone logistics panel; renders `LogisticsButton` ("AUTO") plus `LogisticsModal` when open.
+- `UpgradesButton` — toggles `ShipUpgradePanel` (ship workshop) via `uiStore`.
+
+All values are read individually via separate `useUIStore` selectors (not a single destructure) to keep re-renders scoped to the rows that actually changed. `hudFlash` (bumped on failed/blocked actions) replays a CSS alert animation by toggling a class via `useEffect` + `animationend`; `hudNotify`/`hudNotifyMsg` drive a transient toast-style message keyed by the counter so repeated identical messages still re-trigger the animation.
+
+### Logistics network (`LogisticsModal.tsx`, `LogisticsMap.tsx`, `logisticsStore.ts`)
+
+The logistics modal is split into two files: `LogisticsMap.tsx` owns map projection/rendering (pure-ish, no route-editing logic), `LogisticsModal.tsx` owns the route editor, dispatch flow, and inventory/colony sidebars.
+
+**`LogisticsMap.tsx`:**
+- `projectNodes` collapses extractors/settlements into one map node per system (`getSystemKey`/`colony:` prefix for settlements), then projects them onto a fixed `MAP_SIZE` (320) SVG canvas. Single-galaxy routes project using system-local coordinates; multi-galaxy routes blend galaxy-level and system-level offsets (`SYS_TO_SC` ratio) so stations in different galaxies still spread out sensibly.
+- Node positions are normalized against the median distance from centroid (clamped to 3× median) rather than the max, so one outlier station doesn't compress everything else into the center; `resolveOverlaps` then iteratively pushes overlapping nodes apart (up to 8 passes).
+- `StationMap` renders nodes as circles with a resource-type icon (`ICON_PATHS` from `CargoIcons`, or a diamond for colonies), draws dashed directional edges between consecutive route nodes, and highlights the node currently active in a dispatch animation.
+
+**`LogisticsModal.tsx`:**
+- Left panel lists saved `LogisticsRoute`s (capped by `logisticsA` tier) with per-route cost preview, dispatch-readiness, and a detection-raise warning (`willRaiseDetection`).
+- Middle panel is the route editor: click nodes on the `StationMap` to add/remove them, with an order chain showing dispatch sequence; hovering a node opens `NodeSidebar` (extractor: per-resource accumulation/rate + 2 upgrade-module slots) or `ColonySidebar` (per-colony production slots, recipe progress bars, slot-unlock costs).
+- Right panel tabs between **Reserves** (exotic/helium-3 totals + per-system accumulated resources + ready colony output) and **Inventory** (owned upgrade modules, equip/unequip into whatever node slot was last clicked).
+- `handleDispatch` snapshots pre-dispatch accumulated amounts, calls `dispatchRoute`, then builds a `DispatchAnim` (per-node reveal of cost/collection lines, 500ms per hop) purely for visual feedback — the actual resource transfer already happened synchronously in the store.
+- All mutations that affect Firebase-backed state (`ownedUpgrades`/`nodeEquipped`/`pendingUpgrades`, colony states, routes, extractor `lastCollectedAt`) are mirrored to Firestore (`firebase/extractorUpgrades.ts`, `firebase/settlements.ts`, `firebase/logisticsRoutes.ts`, `firebase/extractors.ts`) immediately after each local store update.
+
+**Extractor upgrade modules** (`src/data/upgrades.json`, typed re-export in `upgrades.ts`): data-driven defs (`EXTRACTOR_UPGRADES`) with `cost` (alloys/exotic/helium) and `effect` (`rate`, `storage`, or `detection` `upgType` + `multiplier`). Modules are earned via colony production (not purchased directly in this flow) and equipped two-per-extractor; a `detection` module (Signal Dampener) excludes that extractor from `willRaiseDetection` checks entirely rather than reducing a numeric detection value.
